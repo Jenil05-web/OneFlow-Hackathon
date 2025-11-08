@@ -22,7 +22,6 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "express-validator": "^7.0.1",
-    "framer-motion": "^12.23.24",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongo": "^0.1.0",

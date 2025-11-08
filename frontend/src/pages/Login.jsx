@@ -26,8 +26,8 @@ const Login = () => {
       const response = await authAPI.login(formData);
       // console.log('Login response:', response.data);
 
-      localStorage.setItem("token", response.data.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.data.user));
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
 
       navigate("/dashboard");
     } catch (err) {
