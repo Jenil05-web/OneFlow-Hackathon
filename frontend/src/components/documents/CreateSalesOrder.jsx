@@ -4,10 +4,11 @@ import './DocumentModal.css';
 
 const CreateSalesOrder = ({ projectId, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
+    orderNumber: '', // Will be auto-generated, shown as read-only
     partnerName: '',
     partnerEmail: '',
-    lines: [{ description: '', quantity: 1, unitPrice: 0 }],
-    taxRate: 0,
+    project: projectId || '',
+    lines: [{ product: '', quantity: 1, unit: 'Unit', unitPrice: 0, taxRate: 0, amount: 0 }],
     orderDate: new Date().toISOString().split('T')[0],
     dueDate: '',
     status: 'Draft',
@@ -26,17 +27,24 @@ const CreateSalesOrder = ({ projectId, onClose, onSuccess }) => {
 
   const handleLineChange = (index, field, value) => {
     const newLines = [...formData.lines];
-    newLines[index][field] = field === 'quantity' || field === 'unitPrice' 
-      ? parseFloat(value) || 0 
-      : value;
-    newLines[index].amount = newLines[index].quantity * newLines[index].unitPrice;
+    if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
+      newLines[index][field] = parseFloat(value) || 0;
+    } else {
+      newLines[index][field] = value;
+    }
+    // Calculate amount with tax
+    const qty = newLines[index].quantity || 0;
+    const price = newLines[index].unitPrice || 0;
+    const tax = newLines[index].taxRate || 0;
+    const subtotal = qty * price;
+    newLines[index].amount = subtotal + (subtotal * tax / 100);
     setFormData(prev => ({ ...prev, lines: newLines }));
   };
 
   const addLine = () => {
     setFormData(prev => ({
       ...prev,
-      lines: [...prev.lines, { description: '', quantity: 1, unitPrice: 0, amount: 0 }],
+      lines: [...prev.lines, { product: '', quantity: 1, unit: 'Unit', unitPrice: 0, taxRate: 0, amount: 0 }],
     }));
   };
 
@@ -50,10 +58,15 @@ const CreateSalesOrder = ({ projectId, onClose, onSuccess }) => {
   };
 
   const calculateTotals = () => {
-    const subtotal = formData.lines.reduce((sum, line) => sum + (line.amount || 0), 0);
-    const taxAmount = (subtotal * formData.taxRate) / 100;
-    const total = subtotal + taxAmount;
-    return { subtotal, taxAmount, total };
+    // Calculate untaxed amount (subtotal before taxes)
+    const untaxedAmount = formData.lines.reduce((sum, line) => {
+      const qty = line.quantity || 0;
+      const price = line.unitPrice || 0;
+      return sum + (qty * price);
+    }, 0);
+    // Total includes all taxes from individual lines
+    const total = formData.lines.reduce((sum, line) => sum + (line.amount || 0), 0);
+    return { untaxedAmount, total };
   };
 
   const handleSubmit = async (e) => {
@@ -65,8 +78,8 @@ const CreateSalesOrder = ({ projectId, onClose, onSuccess }) => {
       return;
     }
 
-    if (formData.lines.some(line => !line.description || line.quantity <= 0 || line.unitPrice <= 0)) {
-      setError('All line items must have description, quantity > 0, and unit price > 0');
+    if (formData.lines.some(line => !line.product || line.quantity <= 0 || line.unitPrice <= 0)) {
+      setError('All line items must have product, quantity > 0, and unit price > 0');
       return;
     }
 
@@ -76,13 +89,13 @@ const CreateSalesOrder = ({ projectId, onClose, onSuccess }) => {
       const response = await billingAPI.createSalesOrder({
         partnerName: formData.partnerName,
         partnerEmail: formData.partnerEmail,
-        project: projectId,
+        project: formData.project || projectId,
         lines: formData.lines.map(line => ({
-          description: line.description,
+          description: line.product, // Using product as description for now
           quantity: line.quantity,
           unitPrice: line.unitPrice,
         })),
-        taxRate: formData.taxRate,
+        taxRate: 0, // Tax is per line now
         orderDate: formData.orderDate,
         dueDate: formData.dueDate || undefined,
         status: formData.status,
@@ -101,27 +114,47 @@ const CreateSalesOrder = ({ projectId, onClose, onSuccess }) => {
     }
   };
 
-  const { subtotal, taxAmount, total } = calculateTotals();
+  const { untaxedAmount, total } = calculateTotals();
 
   return (
     <div className="document-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="document-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Create Sales Order</h2>
-          <button className="close-button" onClick={onClose} aria-label="Close">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+      <div className="document-modal document-modal-large" onClick={(e) => e.stopPropagation()}>
+        {/* Header with Action Buttons */}
+        <div className="document-header-actions">
+          <button type="button" className="btn-create-invoice" onClick={() => {/* TODO: Navigate to create invoice */}}>
+            Create Invoice
           </button>
+          <button type="button" className="btn-confirm" onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Saving...' : 'Confirm'}
+          </button>
+          <button type="button" className="btn-cancel" onClick={onClose}>
+            Cancel
+          </button>
+        </div>
+
+        <div className="modal-header">
+          <h2>Sales Order</h2>
         </div>
 
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="document-form">
+          {/* Order Number (Read-only) */}
+          <div className="form-group">
+            <label htmlFor="orderNumber">Order Number</label>
+            <input
+              type="text"
+              id="orderNumber"
+              name="orderNumber"
+              value={formData.orderNumber || 'SO01 (Auto-generated)'}
+              readOnly
+              className="read-only-field"
+            />
+          </div>
+
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="partnerName">Partner Name*</label>
+              <label htmlFor="partnerName">Customer*</label>
               <input
                 type="text"
                 id="partnerName"
@@ -129,18 +162,20 @@ const CreateSalesOrder = ({ projectId, onClose, onSuccess }) => {
                 value={formData.partnerName}
                 onChange={handleChange}
                 required
-                placeholder="Customer/Partner name"
+                placeholder="Customer name"
               />
             </div>
             <div className="form-group">
-              <label htmlFor="partnerEmail">Partner Email</label>
+              <label htmlFor="project">Project*</label>
               <input
-                type="email"
-                id="partnerEmail"
-                name="partnerEmail"
-                value={formData.partnerEmail}
+                type="text"
+                id="project"
+                name="project"
+                value={formData.project || projectId || ''}
                 onChange={handleChange}
-                placeholder="partner@example.com"
+                required
+                placeholder="Project"
+                disabled={!!projectId}
               />
             </div>
           </div>
@@ -169,108 +204,111 @@ const CreateSalesOrder = ({ projectId, onClose, onSuccess }) => {
             </div>
           </div>
 
+          {/* Order Lines Table */}
           <div className="form-group">
-            <label>Line Items*</label>
-            <div className="line-items">
-              {formData.lines.map((line, index) => (
-                <div key={index} className="line-item">
-                  <input
-                    type="text"
-                    placeholder="Description"
-                    value={line.description}
-                    onChange={(e) => handleLineChange(index, 'description', e.target.value)}
-                    className="line-description"
-                    required
-                  />
-                  <input
-                    type="number"
-                    placeholder="Qty"
-                    value={line.quantity}
-                    onChange={(e) => handleLineChange(index, 'quantity', e.target.value)}
-                    className="line-quantity"
-                    min="1"
-                    step="1"
-                    required
-                  />
-                  <input
-                    type="number"
-                    placeholder="Unit Price"
-                    value={line.unitPrice}
-                    onChange={(e) => handleLineChange(index, 'unitPrice', e.target.value)}
-                    className="line-price"
-                    min="0"
-                    step="0.01"
-                    required
-                  />
-                  <div className="line-amount">₹{(line.amount || 0).toFixed(2)}</div>
-                  {formData.lines.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeLine(index)}
-                      className="remove-line-btn"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button type="button" onClick={addLine} className="add-line-btn">
-                + Add Line Item
+            <label>Order Lines</label>
+            <div className="order-lines-table-container">
+              <table className="order-lines-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                    <th>Unit Price</th>
+                    <th>Taxes</th>
+                    <th>Amount</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.lines.map((line, index) => (
+                    <tr key={index}>
+                      <td>
+                        <input
+                          type="text"
+                          value={line.product}
+                          onChange={(e) => handleLineChange(index, 'product', e.target.value)}
+                          placeholder="Product name"
+                          required
+                          className="table-input"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={line.quantity}
+                          onChange={(e) => handleLineChange(index, 'quantity', e.target.value)}
+                          min="1"
+                          step="1"
+                          required
+                          className="table-input"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={line.unit}
+                          onChange={(e) => handleLineChange(index, 'unit', e.target.value)}
+                          placeholder="Unit"
+                          className="table-input"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={line.unitPrice}
+                          onChange={(e) => handleLineChange(index, 'unitPrice', e.target.value)}
+                          min="0"
+                          step="0.01"
+                          required
+                          className="table-input"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={line.taxRate}
+                          onChange={(e) => handleLineChange(index, 'taxRate', e.target.value)}
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          placeholder="0"
+                          className="table-input"
+                        />
+                        <span className="tax-percent">%</span>
+                      </td>
+                      <td className="amount-cell">₹{(line.amount || 0).toFixed(2)}</td>
+                      <td>
+                        {formData.lines.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeLine(index)}
+                            className="remove-line-btn"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button type="button" onClick={addLine} className="add-product-btn">
+                Add a product
               </button>
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="taxRate">Tax Rate (%)</label>
-              <input
-                type="number"
-                id="taxRate"
-                name="taxRate"
-                value={formData.taxRate}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                step="0.01"
-                placeholder="0"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="status">Status</label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-              >
-                <option value="Draft">Draft</option>
-                <option value="Confirmed">Confirmed</option>
-              </select>
-            </div>
-          </div>
-
+          {/* Summary */}
           <div className="totals-section">
             <div className="total-row">
-              <span>Subtotal:</span>
-              <span>₹{subtotal.toFixed(2)}</span>
-            </div>
-            <div className="total-row">
-              <span>Tax ({formData.taxRate}%):</span>
-              <span>₹{taxAmount.toFixed(2)}</span>
+              <span>UnTaxed Amount:</span>
+              <span>₹{untaxedAmount.toFixed(2)}</span>
             </div>
             <div className="total-row total">
               <span>Total:</span>
               <span>₹{total.toFixed(2)}</span>
             </div>
-          </div>
-
-          <div className="form-actions">
-            <button type="button" onClick={onClose} className="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Sales Order'}
-            </button>
           </div>
         </form>
       </div>

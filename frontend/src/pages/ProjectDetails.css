@@ -76,6 +76,22 @@
   min-height: 600px;
 }
 
+.project-overview {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+  margin-top: var(--spacing-lg);
+}
+
+.project-overview p {
+  color: var(--gray-600);
+  font-size: 1.125rem;
+  line-height: 1.7;
+  margin-bottom: var(--spacing-xl);
+}
+
 .project-header {
   display: flex;
   justify-content: space-between;

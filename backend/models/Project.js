@@ -47,6 +47,7 @@ const ProjectSchema = new Schema(
     // Optional metadata
     tags: [{ type: String }],
     archived: { type: Boolean, default: false },
+    image: { type: String, default: "" }, // Project image URL
   },
   {
     timestamps: true,

@@ -74,6 +74,7 @@ const TaskSchema = new Schema(
     // Misc
     tags: [{ type: String }],
     archived: { type: Boolean, default: false },
+    image: { type: String, default: "" }, // Task image URL
   },
   {
     timestamps: true,

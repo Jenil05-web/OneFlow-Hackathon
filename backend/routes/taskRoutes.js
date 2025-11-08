@@ -18,7 +18,7 @@ const router = express.Router();
  */
 router.post("/", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
   try {
-    const { project, title, description, assignedTo, dueDate, priority } = req.body;
+    const { project, title, description, assignedTo, dueDate, priority, tags, image, estimatedHours } = req.body;
 
     if (!project || !title) {
       return res.status(400).json({ success: false, message: "Project and title are required" });
@@ -33,10 +33,13 @@ router.post("/", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (r
     const task = await Task.create({
       project,
       title,
-      description,
+      description: description || "",
       assignedTo,
       dueDate,
-      priority,
+      priority: priority || "Medium",
+      tags: tags || [],
+      image: image || "",
+      estimatedHours: estimatedHours || 0,
       createdBy: req.user._id,
     });
 
@@ -59,13 +62,20 @@ router.get("/", ensureAuthenticated, async (req, res) => {
   try {
     let query = {};
 
+    // Support project filter
+    if (req.query.project) {
+      query.project = req.query.project;
+    }
+
     if (req.user.role === "Team") {
-      query = { assignedTo: req.user._id };
+      // Team members see only tasks assigned to them (within the project if specified)
+      query.assignedTo = req.user._id;
     }
 
     const tasks = await Task.find(query)
       .populate("project", "name status")
       .populate("assignedTo", "name email role")
+      .populate("comments.user", "name email")
       .sort({ createdAt: -1 });
 
     res.json({
@@ -87,7 +97,10 @@ router.get("/:id", ensureAuthenticated, async (req, res) => {
   try {
     const task = await Task.findById(req.params.id)
       .populate("project", "name status")
-      .populate("assignedTo", "name email role");
+      .populate("assignedTo", "name email role")
+      .populate("createdBy", "name email")
+      .populate("comments.user", "name email")
+      .sort({ "comments.createdAt": -1 });
 
     if (!task) {
       return res.status(404).json({ success: false, message: "Task not found" });
@@ -196,6 +209,81 @@ router.put("/:id/assign", ensureAuthenticated, ensureRole(["Admin", "Manager"]),
   } catch (error) {
     console.error("❌ Assign Task Error:", error.message);
     res.status(500).json({ success: false, message: "Server error assigning task" });
+  }
+});
+
+/**
+ * @route   POST /api/tasks/:id/comments
+ * @desc    Add a comment to a task (All authenticated users)
+ */
+router.post("/:id/comments", ensureAuthenticated, async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ success: false, message: "Comment text is required" });
+    }
+
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ success: false, message: "Task not found" });
+    }
+
+    // Check permissions
+    if (req.user.role === "Team" && String(task.assignedTo) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const comment = await task.addComment(req.user._id, text.trim());
+    const populatedTask = await Task.findById(task._id)
+      .populate("project", "name")
+      .populate("assignedTo", "name email role")
+      .populate("comments.user", "name email");
+
+    res.json({
+      success: true,
+      message: "Comment added successfully",
+      task: populatedTask,
+    });
+  } catch (error) {
+    console.error("❌ Add Comment Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error adding comment" });
+  }
+});
+
+/**
+ * @route   POST /api/tasks/:id/attachments
+ * @desc    Add an attachment to a task (All authenticated users)
+ */
+router.post("/:id/attachments", ensureAuthenticated, async (req, res) => {
+  try {
+    const { filename, url } = req.body;
+    if (!filename || !url) {
+      return res.status(400).json({ success: false, message: "Filename and URL are required" });
+    }
+
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ success: false, message: "Task not found" });
+    }
+
+    // Check permissions
+    if (req.user.role === "Team" && String(task.assignedTo) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const attachment = await task.addAttachment(filename, url);
+    const populatedTask = await Task.findById(task._id)
+      .populate("project", "name")
+      .populate("assignedTo", "name email role");
+
+    res.json({
+      success: true,
+      message: "Attachment added successfully",
+      task: populatedTask,
+    });
+  } catch (error) {
+    console.error("❌ Add Attachment Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error adding attachment" });
   }
 });
 

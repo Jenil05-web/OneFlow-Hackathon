@@ -5,6 +5,7 @@ import VendorBill from "../models/VendorBill.js";
 import SalesOrder from "../models/SalesOrder.js";
 import PurchaseOrder from "../models/PurchaseOrder.js";
 import Expense from "../models/Expense.js";
+import Product from "../models/Product.js";
 import Project from "../models/Project.js";
 import { ensureAuthenticated, ensureRole } from "../middleware/authMiddleware.js";
 
@@ -600,6 +601,125 @@ router.delete("/expenses/:id", ensureAuthenticated, async (req, res) => {
   } catch (error) {
     console.error("❌ Delete Expense Error:", error.message);
     res.status(500).json({ success: false, message: "Server error deleting expense" });
+  }
+});
+
+//
+// ==========================
+// 🟢 PRODUCTS
+// ==========================
+//
+
+/**
+ * @route   POST /api/billing/products
+ * @desc    Create a new product (Admin/Manager)
+ */
+router.post("/products", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+  try {
+    const { name, types, salesPrice, salesTaxes, cost, unit, description } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ success: false, message: "Product name is required." });
+    }
+
+    const product = await Product.create({
+      name,
+      types: types || { sales: false, purchase: false, expenses: false },
+      salesPrice: salesPrice || 0,
+      salesTaxes: salesTaxes || 0,
+      cost: cost || 0,
+      unit: unit || "Unit",
+      description: description || "",
+      createdBy: req.user._id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      product,
+    });
+  } catch (error) {
+    console.error("❌ Create Product Error:", error.message);
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: "Product name already exists" });
+    }
+    res.status(500).json({ success: false, message: "Server error creating product" });
+  }
+});
+
+/**
+ * @route   GET /api/billing/products
+ * @desc    Get all products
+ */
+router.get("/products", ensureAuthenticated, async (req, res) => {
+  try {
+    const products = await Product.find({ active: true }).sort({ name: 1 });
+    res.json({
+      success: true,
+      count: products.length,
+      products,
+    });
+  } catch (error) {
+    console.error("❌ Get Products Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error fetching products" });
+  }
+});
+
+/**
+ * @route   GET /api/billing/products/:id
+ * @desc    Get single product
+ */
+router.get("/products/:id", ensureAuthenticated, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error("❌ Get Product Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error fetching product" });
+  }
+});
+
+/**
+ * @route   PUT /api/billing/products/:id
+ * @desc    Update a product (Admin/Manager)
+ */
+router.put("/products/:id", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+    res.json({
+      success: true,
+      message: "Product updated successfully",
+      product,
+    });
+  } catch (error) {
+    console.error("❌ Update Product Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error updating product" });
+  }
+});
+
+/**
+ * @route   DELETE /api/billing/products/:id
+ * @desc    Delete a product (Admin only)
+ */
+router.delete("/products/:id", ensureAuthenticated, ensureRole(["Admin"]), async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(req.params.id, { active: false }, { new: true });
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+    res.json({
+      success: true,
+      message: "Product deleted successfully",
+    });
+  } catch (error) {
+    console.error("❌ Delete Product Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error deleting product" });
   }
 });
 

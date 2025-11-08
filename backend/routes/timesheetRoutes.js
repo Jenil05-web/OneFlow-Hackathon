@@ -19,12 +19,12 @@ const router = express.Router();
  */
 router.post("/", ensureAuthenticated, async (req, res) => {
   try {
-    const { project, task, hours, date, notes } = req.body;
+    const { project, task, hours, date, description, billable } = req.body;
 
-    if (!project || !task || !hours || !date) {
+    if (!project || !hours || !date) {
       return res.status(400).json({
         success: false,
-        message: "Project, task, hours, and date are required",
+        message: "Project, hours, and date are required",
       });
     }
 
@@ -34,21 +34,23 @@ router.post("/", ensureAuthenticated, async (req, res) => {
       return res.status(404).json({ success: false, message: "Project not found" });
     }
 
-    // Validate task
-    const taskExists = await Task.findById(task);
-    if (!taskExists) {
-      return res.status(404).json({ success: false, message: "Task not found" });
+    // Validate task if provided
+    if (task) {
+      const taskExists = await Task.findById(task);
+      if (!taskExists) {
+        return res.status(404).json({ success: false, message: "Task not found" });
+      }
     }
 
     // Create timesheet
     const timesheet = await Timesheet.create({
       project,
-      task,
+      task: task || undefined,
       user: req.user._id,
       hours,
       date,
-      notes,
-      status: "Pending",
+      description: description || "",
+      billable: billable !== undefined ? billable : true,
     });
 
     res.status(201).json({
@@ -74,10 +76,19 @@ router.get("/", ensureAuthenticated, async (req, res) => {
       query.user = req.user._id;
     }
 
+    // Support project and task filters
+    if (req.query.project) {
+      query.project = req.query.project;
+    }
+    if (req.query.task) {
+      query.task = req.query.task;
+    }
+
     const timesheets = await Timesheet.find(query)
       .populate("project", "name")
       .populate("task", "title")
       .populate("user", "name email role")
+      .populate("approvedBy", "name email")
       .sort({ date: -1 });
 
     res.json({
@@ -158,27 +169,31 @@ router.put("/:id", ensureAuthenticated, async (req, res) => {
  */
 router.put("/:id/status", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
   try {
-    const { status } = req.body;
-    const validStatuses = ["Pending", "Approved", "Rejected"];
+    const { approved } = req.body;
 
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ success: false, message: "Invalid status value" });
+    if (typeof approved !== 'boolean') {
+      return res.status(400).json({ success: false, message: "Approved must be a boolean value" });
     }
 
-    const timesheet = await Timesheet.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    ).populate("user", "name email role");
-
+    const timesheet = await Timesheet.findById(req.params.id);
     if (!timesheet) {
       return res.status(404).json({ success: false, message: "Timesheet not found" });
     }
 
+    timesheet.approved = approved;
+    timesheet.approvedBy = req.user._id;
+    timesheet.approvedAt = new Date();
+    await timesheet.save();
+
+    const populatedTimesheet = await Timesheet.findById(timesheet._id)
+      .populate("user", "name email role")
+      .populate("project", "name")
+      .populate("task", "title");
+
     res.json({
       success: true,
-      message: `Timesheet ${status.toLowerCase()} successfully`,
-      timesheet,
+      message: `Timesheet ${approved ? 'approved' : 'rejected'} successfully`,
+      timesheet: populatedTimesheet,
     });
   } catch (error) {
     console.error("❌ Update Timesheet Status Error:", error.message);

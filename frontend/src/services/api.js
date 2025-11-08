@@ -75,6 +75,8 @@ export const tasksAPI = {
   updateStatus: (id, status) => api.put(`/tasks/${id}/status`, { status }),
   assign: (id, assignedTo) => api.put(`/tasks/${id}/assign`, { assignedTo }),
   getByProject: (projectId) => api.get('/tasks', { params: { project: projectId } }),
+  addComment: (id, text) => api.post(`/tasks/${id}/comments`, { text }),
+  addAttachment: (id, filename, url) => api.post(`/tasks/${id}/attachments`, { filename, url }),
 };
 
 // Timesheets API
@@ -85,6 +87,8 @@ export const timesheetsAPI = {
   update: (id, data) => api.put(`/timesheets/${id}`, data),
   delete: (id) => api.delete(`/timesheets/${id}`),
   updateStatus: (id, approved) => api.put(`/timesheets/${id}/status`, { approved }),
+  approve: (id) => api.put(`/timesheets/${id}/status`, { approved: true }),
+  reject: (id) => api.put(`/timesheets/${id}/status`, { approved: false }),
   getByProject: (projectId) => api.get('/timesheets', { params: { project: projectId } }),
   getByUser: (userId) => api.get('/timesheets', { params: { user: userId } }),
 };
@@ -126,6 +130,13 @@ export const billingAPI = {
   updateExpense: (id, data) => api.put(`/billing/expenses/${id}`, data),
   approveExpense: (id, status) => api.put(`/billing/expenses/${id}/approve`, { status }),
   deleteExpense: (id) => api.delete(`/billing/expenses/${id}`),
+  
+  // Products
+  getProducts: () => api.get('/billing/products'),
+  getProduct: (id) => api.get(`/billing/products/${id}`),
+  createProduct: (data) => api.post('/billing/products', data),
+  updateProduct: (id, data) => api.put(`/billing/products/${id}`, data),
+  deleteProduct: (id) => api.delete(`/billing/products/${id}`),
 };
 
 // Analytics API

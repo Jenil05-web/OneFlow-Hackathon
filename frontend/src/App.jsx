@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
@@ -13,6 +14,7 @@ import ResetPassword from './pages/ResetPassword';
 import ProjectDetails from './pages/ProjectDetails';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSettings from './pages/AdminSettings';
+import CreateTask from './components/CreateTask';
 
 // Component to conditionally render Navbar
 function AppContent() {
@@ -103,6 +105,38 @@ function AppContent() {
             </AdminRoute>
           }
         />
+        <Route
+          path="/project/:projectId/task/new"
+          element={
+            <PrivateRoute>
+              <CreateTask />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/project/:projectId/task/:taskId/edit"
+          element={
+            <PrivateRoute>
+              <CreateTask />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/task/new"
+          element={
+            <PrivateRoute>
+              <CreateTask />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/task/:taskId/edit"
+          element={
+            <PrivateRoute>
+              <CreateTask />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </div>
   );
@@ -110,9 +144,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </ThemeProvider>
   );
 }
 

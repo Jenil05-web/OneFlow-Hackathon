@@ -1,7 +1,28 @@
 import React from 'react';
+import { useDraggable } from '@dnd-kit/core';
 import './TaskCard.css';
 
-const TaskCard = ({ task, index, columnId }) => {
+const TaskCard = ({ task, index, columnId, onClick }) => {
+  const taskId = task.id || task._id;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: taskId,
+    data: {
+      task,
+      columnId,
+      type: 'task',
+    },
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined;
+
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
       case 'high':
@@ -18,72 +39,80 @@ const TaskCard = ({ task, index, columnId }) => {
   const formatDate = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' });
   };
 
+  // Get assignee count
+  const getAssigneeCount = () => {
+    if (Array.isArray(task.assignedTo)) {
+      return task.assignedTo.length;
+    }
+    if (Array.isArray(task.assignee)) {
+      return task.assignee.length;
+    }
+    return (task.assignedTo || task.assignee) ? 1 : 0;
+  };
+
+  // Get comments count
+  const commentsCount = task.comments?.length || 0;
+
   return (
-    <div className={`task-card ${getPriorityColor(task.priority)}`}>
+    <div 
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={`task-card ${getPriorityColor(task.priority)} ${onClick ? 'clickable' : ''} ${isDragging ? 'dragging' : ''}`}
+      onClick={onClick}
+    >
+      {/* Title */}
       <div className="task-header">
         <h4 className="task-title">{task.title}</h4>
-        {task.priority && (
-          <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>
-            {task.priority}
-          </span>
+      </div>
+
+      {/* Status and Tags */}
+      <div className="task-status-tags">
+        <span className={`task-status-badge status-${task.status?.toLowerCase().replace(' ', '-') || 'new'}`}>
+          {task.status === 'To Do' || !task.status ? 'New' : 
+           task.status === 'In Progress' || task.status === 'Review' || task.status === 'Blocked' ? 'In Progress' :
+           task.status === 'Completed' ? 'Done' : task.status}
+        </span>
+        {task.tags && task.tags.length > 0 && (
+          <span className="task-tag-badge">{task.tags[0]}</span>
         )}
       </div>
-      
-      {task.description && (
-        <p className="task-description">{task.description}</p>
-      )}
-      
-      {task.tags && task.tags.length > 0 && (
-        <div className="task-tags">
-          {task.tags.map((tag, idx) => (
-            <span key={idx} className="task-tag">{tag}</span>
-          ))}
+
+      {/* Task Images */}
+      {task.image && (
+        <div className="task-images">
+          <img src={task.image} alt={task.title} onError={(e) => { e.target.style.display = 'none'; }} />
         </div>
       )}
-      
-      <div className="task-footer">
-        {(task.assignedTo || task.assignee) && (
-          <div className="task-assignee">
-            <div className="assignee-avatar">
-              {(() => {
-                const assignee = task.assignedTo || task.assignee;
-                if (typeof assignee === 'object') {
-                  return assignee.avatar ? (
-                    <img src={assignee.avatar} alt={assignee.name} />
-                  ) : (
-                    <span>{assignee.name?.charAt(0)?.toUpperCase() || 'U'}</span>
-                  );
-                }
-                return <span>{assignee?.charAt(0)?.toUpperCase() || 'U'}</span>;
-              })()}
-            </div>
-            <span className="assignee-name">
-              {(() => {
-                const assignee = task.assignedTo || task.assignee;
-                return typeof assignee === 'object' 
-                  ? assignee.name || 'Unassigned'
-                  : assignee || 'Unassigned';
-              })()}
-            </span>
-          </div>
-        )}
-        
+
+      {/* Metadata Footer */}
+      <div className="task-footer-metadata">
+        <div className="task-meta-item">
+          <span className="meta-icon">👤</span>
+          <span className="meta-value">{getAssigneeCount()}</span>
+        </div>
         {task.dueDate && (
-          <div className="task-due-date">
-            <span className="due-date-icon">📅</span>
-            <span>{formatDate(task.dueDate)}</span>
+          <div className="task-meta-item">
+            <span className="meta-icon">🕐</span>
+            <span className="meta-value">{formatDate(task.dueDate)}</span>
           </div>
         )}
-        
-        {task.timeLogged > 0 && (
-          <div className="task-time">
-            <span className="time-icon">⏱️</span>
-            <span>{task.timeLogged}h</span>
-          </div>
-        )}
+        <div className="task-meta-item">
+          <span className="meta-icon">💬</span>
+          <span className="meta-value">{commentsCount}</span>
+        </div>
+        <div className="task-meta-icons">
+          <span className="meta-icon-small">🚩</span>
+          <span className="meta-icon-small">📅</span>
+          <span className="meta-icon-small">🕐</span>
+          <span className="meta-icon-small">❤️</span>
+          <span className="meta-icon-small">🔗</span>
+          <span className="meta-icon-small">⋯</span>
+        </div>
       </div>
     </div>
   );

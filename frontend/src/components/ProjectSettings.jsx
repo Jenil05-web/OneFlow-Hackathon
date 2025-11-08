@@ -5,6 +5,7 @@ import CreatePurchaseOrder from './documents/CreatePurchaseOrder';
 import CreateInvoice from './documents/CreateInvoice';
 import CreateVendorBill from './documents/CreateVendorBill';
 import CreateExpense from './documents/CreateExpense';
+import TimesheetManagement from './TimesheetManagement';
 import './ProjectSettings.css';
 
 const ProjectSettings = ({ projectId, project }) => {
@@ -63,6 +64,7 @@ const ProjectSettings = ({ projectId, project }) => {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'timesheets', label: 'Timesheets', icon: '⏱️' },
     { id: 'sales-orders', label: 'Sales Orders', icon: '📋', count: salesOrders.length },
     { id: 'purchase-orders', label: 'Purchase Orders', icon: '🛒', count: purchaseOrders.length },
     { id: 'invoices', label: 'Invoices', icon: '🧾', count: invoices.length },
@@ -183,8 +185,13 @@ const ProjectSettings = ({ projectId, project }) => {
             </div>
           )}
 
+          {/* Timesheets Tab */}
+          {activeTab === 'timesheets' && !loading && (
+            <TimesheetManagement projectId={projectId} onRefresh={fetchAllDocuments} />
+          )}
+
           {/* Document Tabs */}
-          {activeTab !== 'overview' && !loading && (
+          {activeTab !== 'overview' && activeTab !== 'timesheets' && !loading && (
             <div className="documents-tab">
               <div className="documents-header">
                 <h2>{tabs.find(t => t.id === activeTab)?.label}</h2>

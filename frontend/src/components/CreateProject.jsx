@@ -12,8 +12,10 @@ const CreateProject = ({ onClose, onSuccess }) => {
     startDate: '',
     endDate: '',
     budget: 0,
-    tags: []
+    tags: [],
+    image: ''
   });
+  const [imagePreview, setImagePreview] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,6 +27,29 @@ const CreateProject = ({ onClose, onSuccess }) => {
       ...prev,
       [name]: value
     }));
+    
+    // Update image preview when image URL changes
+    if (name === 'image') {
+      setImagePreview(value || null);
+    }
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // For file upload, we'll create a local preview
+      // In a production app, you'd upload to a server first
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result;
+        setImagePreview(result);
+        setFormData(prev => ({
+          ...prev,
+          image: result // Store as data URL for now (or upload to server)
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleTagInput = (e) => {
@@ -62,6 +87,7 @@ const CreateProject = ({ onClose, onSuccess }) => {
         endDate: formData.endDate || undefined,
         budget: formData.budget ? parseFloat(formData.budget) : 0,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
+        image: formData.image || undefined,
       };
 
       const response = await projectsAPI.create(projectData);
@@ -133,18 +159,6 @@ const CreateProject = ({ onClose, onSuccess }) => {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Enter project description"
-              rows="4"
-            />
-          </div>
-
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="status">Status</label>
@@ -198,6 +212,76 @@ const CreateProject = ({ onClose, onSuccess }) => {
                 onChange={handleChange}
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="image">Image</label>
+            <div className="image-upload-section">
+              <div className="image-preview-container">
+                {imagePreview ? (
+                  <div className="image-preview">
+                    <img 
+                      src={imagePreview} 
+                      alt="Project preview" 
+                      onError={(e) => {
+                        console.error('Image failed to load:', imagePreview);
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="remove-image-btn"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setFormData(prev => ({ ...prev, image: '' }));
+                      }}
+                      aria-label="Remove image"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div className="image-placeholder">
+                    <span>📷</span>
+                    <span>No image uploaded</span>
+                  </div>
+                )}
+              </div>
+              <div className="image-upload-options">
+                <input
+                  type="url"
+                  id="imageUrl"
+                  name="image"
+                  value={formData.image}
+                  onChange={handleChange}
+                  placeholder="Enter image URL (https://example.com/image.jpg)"
+                  className="image-url-input"
+                />
+                <label htmlFor="imageFile" className="upload-button-label">
+                  <span className="upload-icon">📤</span>
+                  <span>Upload Image</span>
+                  <input
+                    type="file"
+                    id="imageFile"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Enter project description"
+              rows="4"
+            />
           </div>
 
           <div className="form-group">
