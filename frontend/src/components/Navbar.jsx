@@ -3,6 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 const Navbar = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const userData = localStorage.getItem("user");
+  const user = userData ? JSON.parse(userData) : null;
+  const isAdmin = user?.role === "Admin";
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -22,6 +25,11 @@ const Navbar = () => {
               <Link to="/dashboard" className="nav-link">
                 Dashboard
               </Link>
+              {isAdmin && (
+                <Link to="/admin" className="nav-link">
+                  Admin
+                </Link>
+              )}
               <button onClick={handleLogout} className="btn btn-outline">
                 Logout
               </button>

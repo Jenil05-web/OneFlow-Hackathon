@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectsAPI, tasksAPI } from '../services/api';
 import KanbanBoard from '../components/Kanban/KanbanBoard';
+import ProjectSettings from '../components/ProjectSettings';
 import './ProjectDetails.css';
 
 const ProjectDetails = () => {
@@ -11,6 +12,7 @@ const ProjectDetails = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' or 'settings'
 
   useEffect(() => {
     fetchProjectData();
@@ -123,15 +125,25 @@ const ProjectDetails = () => {
               <i className="fas fa-arrow-left"></i>
               Back to Dashboard
             </button>
-            <button className="project-action-button btn-secondary">
-              <i className="fas fa-user-plus"></i>
-              Add Member
-            </button>
-            <button className="project-action-button btn-primary">
-              <i className="fas fa-plus"></i>
-              Add Task
-            </button>
           </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="project-tabs">
+          <button
+            className={`project-tab ${activeTab === 'tasks' ? 'active' : ''}`}
+            onClick={() => setActiveTab('tasks')}
+          >
+            <span>📋</span>
+            Tasks
+          </button>
+          <button
+            className={`project-tab ${activeTab === 'settings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('settings')}
+          >
+            <span>⚙️</span>
+            Settings & Billing
+          </button>
         </div>
         <p>{project.description || 'No description provided'}</p>
         <div className="project-metadata">
@@ -157,24 +169,44 @@ const ProjectDetails = () => {
           {project.budget > 0 && (
             <span>
               <i className="fas fa-dollar-sign"></i>
-              Budget: ${project.budget.toLocaleString()}
+              Budget: ₹{project.budget.toLocaleString('en-IN')}
             </span>
           )}
           {project.revenue !== undefined && (
             <span>
               <i className="fas fa-chart-line"></i>
-              Revenue: ${project.revenue?.toLocaleString() || 0}
+              Revenue: ₹{(project.revenue || 0).toLocaleString('en-IN')}
+            </span>
+          )}
+          {project.cost !== undefined && (
+            <span>
+              <i className="fas fa-chart-line"></i>
+              Cost: ₹{(project.cost || 0).toLocaleString('en-IN')}
+            </span>
+          )}
+          {project.profit !== undefined && (
+            <span>
+              <i className="fas fa-chart-line"></i>
+              Profit: ₹{(project.profit || 0).toLocaleString('en-IN')}
             </span>
           )}
         </div>
       </div>
-      <div className="kanban-container">
-        <KanbanBoard 
-          tasks={tasks} 
-          onTaskStatusUpdate={handleTaskStatusUpdate}
-          projectId={projectId}
-        />
-      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'tasks' && (
+        <div className="kanban-container">
+          <KanbanBoard 
+            tasks={tasks} 
+            onTaskStatusUpdate={handleTaskStatusUpdate}
+            projectId={projectId}
+          />
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <ProjectSettings projectId={projectId} project={project} />
+      )}
     </div>
   );
 };

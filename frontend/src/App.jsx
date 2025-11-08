@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
+import AdminRoute from './components/AdminRoute';
 import PublicRoute from './components/PublicRoute';
 import Landingpages from './pages/Landingpages';
 import Signup from './pages/Signup';
@@ -10,6 +11,8 @@ import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ProjectDetails from './pages/ProjectDetails';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminSettings from './pages/AdminSettings';
 
 // Component to conditionally render Navbar
 function AppContent() {
@@ -82,6 +85,22 @@ function AppContent() {
             <PrivateRoute>
               <ProjectDetails />
             </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <AdminRoute>
+              <AdminSettings />
+            </AdminRoute>
           }
         />
       </Routes>

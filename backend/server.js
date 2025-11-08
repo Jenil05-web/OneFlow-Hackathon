@@ -53,16 +53,28 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
       const adminExists = await User.findOne({ email: adminEmail });
       if (!adminExists) {
-        const hashed = await bcrypt.hash(adminPassword, 10);
+        // Don't hash here - let the User model's pre-save hook handle it
+        // This prevents double-hashing
         await User.create({
           name: "Super Admin",
           email: adminEmail,
-          password: hashed,
+          password: adminPassword, // Plain password - will be hashed by pre-save hook
           role: "Admin",
         });
         console.log(`👑 Default Admin Created: ${adminEmail} / ${adminPassword}`);
       } else {
-        console.log("✅ Default Admin already exists, skipping creation.");
+        // Check if admin password needs to be reset (in case it was double-hashed)
+        // Test if the current password works
+        const testMatch = await bcrypt.compare(adminPassword, adminExists.password);
+        if (!testMatch) {
+          // Password doesn't match - might be double-hashed or wrong
+          // Reset it to the default password
+          adminExists.password = adminPassword; // Will be hashed by pre-save hook
+          await adminExists.save();
+          console.log(`🔧 Admin password reset to default: ${adminEmail} / ${adminPassword}`);
+        } else {
+          console.log("✅ Default Admin already exists with correct password.");
+        }
       }
     } catch (error) {
       console.error("❌ Error creating default admin:", error.message);

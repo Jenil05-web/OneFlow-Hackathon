@@ -4,6 +4,7 @@ import Invoice from "../models/Invoice.js";
 import VendorBill from "../models/VendorBill.js";
 import SalesOrder from "../models/SalesOrder.js";
 import PurchaseOrder from "../models/PurchaseOrder.js";
+import Expense from "../models/Expense.js";
 import Project from "../models/Project.js";
 import { ensureAuthenticated, ensureRole } from "../middleware/authMiddleware.js";
 
@@ -32,26 +33,25 @@ const router = express.Router();
  */
 router.post("/invoices", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
   try {
-    const { customer, project, salesOrder, amount, dueDate, status } = req.body;
+    const { clientName, clientEmail, clientAddress, project, salesOrder, lines, taxRate, dueDate, status } = req.body;
 
-    if (!customer || !project || !amount) {
-      return res.status(400).json({ success: false, message: "Customer, project, and amount are required." });
+    if (!clientName || !project) {
+      return res.status(400).json({ success: false, message: "Client name and project are required." });
     }
 
     // Optionally link to sales order
     const invoice = await Invoice.create({
-      customer,
+      clientName,
+      clientEmail,
+      clientAddress,
       project,
       salesOrder,
-      amount,
+      lines: lines || [],
+      taxRate: taxRate || 0,
       dueDate,
       status: status || "Draft",
       createdBy: req.user._id,
     });
-
-    // Update project revenue
-    const totalRevenue = await Invoice.computeProjectRevenue(project);
-    await Project.findByIdAndUpdate(project, { revenue: totalRevenue });
 
     res.status(201).json({
       success: true,
@@ -66,19 +66,36 @@ router.post("/invoices", ensureAuthenticated, ensureRole(["Admin", "Manager"]), 
 
 /**
  * @route   GET /api/billing/invoices
- * @desc    Get all invoices (Team → only their own projects)
+ * @desc    Get all invoices (Team → only their own projects, supports project filter)
  */
 router.get("/invoices", ensureAuthenticated, async (req, res) => {
   try {
     let query = {};
+    const { project } = req.query;
+
+    // Filter by project if provided
+    if (project) {
+      query.project = project;
+    }
+
+    // Team members only see invoices for projects they're assigned to
     if (req.user.role === "Team") {
-      query["project.members"] = req.user._id;
+      // If filtering by project, verify user is assigned to it
+      if (project) {
+        const projectDoc = await Project.findById(project);
+        if (!projectDoc || !projectDoc.teamMembers?.includes(req.user._id)) {
+          return res.status(403).json({ success: false, message: "Access denied to this project" });
+        }
+      } else {
+        // Get all projects user is assigned to
+        const userProjects = await Project.find({ teamMembers: req.user._id }).select("_id");
+        query.project = { $in: userProjects.map(p => p._id) };
+      }
     }
 
     const invoices = await Invoice.find(query)
-      .populate("customer", "name email")
       .populate("project", "name")
-      .populate("salesOrder", "orderNumber totalAmount status")
+      .populate("salesOrder", "number total status")
       .populate("createdBy", "name email role")
       .sort({ createdAt: -1 });
 
@@ -102,10 +119,6 @@ router.put("/invoices/:id", ensureAuthenticated, ensureRole(["Admin", "Manager"]
     const invoice = await Invoice.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
     if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
-
-    // Recalculate project revenue if changed
-    const totalRevenue = await Invoice.computeProjectRevenue(invoice.project);
-    await Project.findByIdAndUpdate(invoice.project, { revenue: totalRevenue });
 
     res.json({ success: true, message: "Invoice updated successfully", invoice });
   } catch (error) {
@@ -142,25 +155,24 @@ router.delete("/invoices/:id", ensureAuthenticated, ensureRole(["Admin"]), async
  */
 router.post("/vendor-bills", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
   try {
-    const { vendor, project, purchaseOrder, amount, dueDate, status } = req.body;
+    const { vendorName, vendorEmail, vendorAddress, project, purchaseOrder, lines, taxRate, dueDate, status } = req.body;
 
-    if (!vendor || !project || !amount) {
-      return res.status(400).json({ success: false, message: "Vendor, project, and amount are required." });
+    if (!vendorName || !project) {
+      return res.status(400).json({ success: false, message: "Vendor name and project are required." });
     }
 
     const bill = await VendorBill.create({
-      vendor,
+      vendorName,
+      vendorEmail,
+      vendorAddress,
       project,
       purchaseOrder,
-      amount,
+      lines: lines || [],
+      taxRate: taxRate || 0,
       dueDate,
       status: status || "Draft",
       createdBy: req.user._id,
     });
-
-    // Update project cost (from all bills)
-    const totalCost = await VendorBill.computeProjectCost(project);
-    await Project.findByIdAndUpdate(project, { cost: totalCost });
 
     res.status(201).json({
       success: true,
@@ -175,14 +187,20 @@ router.post("/vendor-bills", ensureAuthenticated, ensureRole(["Admin", "Manager"
 
 /**
  * @route   GET /api/billing/vendor-bills
- * @desc    Get all vendor bills (Admin/Manager)
+ * @desc    Get all vendor bills (Admin/Manager, supports project filter)
  */
 router.get("/vendor-bills", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
   try {
-    const bills = await VendorBill.find()
-      .populate("vendor", "name email")
+    let query = {};
+    const { project } = req.query;
+
+    if (project) {
+      query.project = project;
+    }
+
+    const bills = await VendorBill.find(query)
       .populate("project", "name")
-      .populate("purchaseOrder", "orderNumber totalAmount status")
+      .populate("purchaseOrder", "number total status")
       .populate("createdBy", "name email role")
       .sort({ createdAt: -1 });
 
@@ -201,9 +219,6 @@ router.put("/vendor-bills/:id", ensureAuthenticated, ensureRole(["Admin", "Manag
   try {
     const bill = await VendorBill.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!bill) return res.status(404).json({ success: false, message: "Vendor bill not found" });
-
-    const totalCost = await VendorBill.computeProjectCost(bill.project);
-    await Project.findByIdAndUpdate(bill.project, { cost: totalCost });
 
     res.json({ success: true, message: "Vendor bill updated successfully", bill });
   } catch (error) {
@@ -225,6 +240,366 @@ router.delete("/vendor-bills/:id", ensureAuthenticated, ensureRole(["Admin"]), a
   } catch (error) {
     console.error("❌ Delete Vendor Bill Error:", error.message);
     res.status(500).json({ success: false, message: "Server error deleting vendor bill" });
+  }
+});
+
+//
+// ==========================
+// 🟡 SALES ORDERS
+// ==========================
+//
+
+/**
+ * @route   POST /api/billing/sales-orders
+ * @desc    Create a new sales order (Admin/Manager)
+ */
+router.post("/sales-orders", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+  try {
+    const { partnerName, partnerEmail, project, lines, taxRate, orderDate, dueDate, status } = req.body;
+
+    if (!partnerName || !project) {
+      return res.status(400).json({ success: false, message: "Partner name and project are required." });
+    }
+
+    const salesOrder = await SalesOrder.create({
+      partnerName,
+      partnerEmail,
+      project,
+      lines: lines || [],
+      taxRate: taxRate || 0,
+      orderDate: orderDate || new Date(),
+      dueDate,
+      status: status || "Draft",
+      createdBy: req.user._id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Sales order created successfully",
+      salesOrder,
+    });
+  } catch (error) {
+    console.error("❌ Create Sales Order Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error creating sales order" });
+  }
+});
+
+/**
+ * @route   GET /api/billing/sales-orders
+ * @desc    Get all sales orders (supports project filter)
+ */
+router.get("/sales-orders", ensureAuthenticated, async (req, res) => {
+  try {
+    let query = {};
+    const { project } = req.query;
+
+    if (project) {
+      query.project = project;
+    }
+
+    const salesOrders = await SalesOrder.find(query)
+      .populate("project", "name")
+      .populate("createdBy", "name email role")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: salesOrders.length,
+      salesOrders,
+    });
+  } catch (error) {
+    console.error("❌ Get Sales Orders Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error fetching sales orders" });
+  }
+});
+
+/**
+ * @route   PUT /api/billing/sales-orders/:id
+ * @desc    Update sales order (Admin/Manager)
+ */
+router.put("/sales-orders/:id", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+  try {
+    const salesOrder = await SalesOrder.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!salesOrder) return res.status(404).json({ success: false, message: "Sales order not found" });
+
+    res.json({ success: true, message: "Sales order updated successfully", salesOrder });
+  } catch (error) {
+    console.error("❌ Update Sales Order Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error updating sales order" });
+  }
+});
+
+/**
+ * @route   DELETE /api/billing/sales-orders/:id
+ * @desc    Delete sales order (Admin only)
+ */
+router.delete("/sales-orders/:id", ensureAuthenticated, ensureRole(["Admin"]), async (req, res) => {
+  try {
+    const salesOrder = await SalesOrder.findByIdAndDelete(req.params.id);
+    if (!salesOrder) return res.status(404).json({ success: false, message: "Sales order not found" });
+
+    res.json({ success: true, message: "Sales order deleted successfully" });
+  } catch (error) {
+    console.error("❌ Delete Sales Order Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error deleting sales order" });
+  }
+});
+
+//
+// ==========================
+// 🟠 PURCHASE ORDERS
+// ==========================
+//
+
+/**
+ * @route   POST /api/billing/purchase-orders
+ * @desc    Create a new purchase order (Admin/Manager)
+ */
+router.post("/purchase-orders", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+  try {
+    const { vendorName, vendorEmail, vendorPhone, project, lines, taxRate, orderDate, deliveryDate, status } = req.body;
+
+    if (!vendorName || !project) {
+      return res.status(400).json({ success: false, message: "Vendor name and project are required." });
+    }
+
+    const purchaseOrder = await PurchaseOrder.create({
+      vendorName,
+      vendorEmail,
+      vendorPhone,
+      project,
+      lines: lines || [],
+      taxRate: taxRate || 0,
+      orderDate: orderDate || new Date(),
+      deliveryDate,
+      status: status || "Draft",
+      createdBy: req.user._id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Purchase order created successfully",
+      purchaseOrder,
+    });
+  } catch (error) {
+    console.error("❌ Create Purchase Order Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error creating purchase order" });
+  }
+});
+
+/**
+ * @route   GET /api/billing/purchase-orders
+ * @desc    Get all purchase orders (supports project filter)
+ */
+router.get("/purchase-orders", ensureAuthenticated, async (req, res) => {
+  try {
+    let query = {};
+    const { project } = req.query;
+
+    if (project) {
+      query.project = project;
+    }
+
+    const purchaseOrders = await PurchaseOrder.find(query)
+      .populate("project", "name")
+      .populate("createdBy", "name email role")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: purchaseOrders.length,
+      purchaseOrders,
+    });
+  } catch (error) {
+    console.error("❌ Get Purchase Orders Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error fetching purchase orders" });
+  }
+});
+
+/**
+ * @route   PUT /api/billing/purchase-orders/:id
+ * @desc    Update purchase order (Admin/Manager)
+ */
+router.put("/purchase-orders/:id", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+  try {
+    const purchaseOrder = await PurchaseOrder.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!purchaseOrder) return res.status(404).json({ success: false, message: "Purchase order not found" });
+
+    res.json({ success: true, message: "Purchase order updated successfully", purchaseOrder });
+  } catch (error) {
+    console.error("❌ Update Purchase Order Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error updating purchase order" });
+  }
+});
+
+/**
+ * @route   DELETE /api/billing/purchase-orders/:id
+ * @desc    Delete purchase order (Admin only)
+ */
+router.delete("/purchase-orders/:id", ensureAuthenticated, ensureRole(["Admin"]), async (req, res) => {
+  try {
+    const purchaseOrder = await PurchaseOrder.findByIdAndDelete(req.params.id);
+    if (!purchaseOrder) return res.status(404).json({ success: false, message: "Purchase order not found" });
+
+    res.json({ success: true, message: "Purchase order deleted successfully" });
+  } catch (error) {
+    console.error("❌ Delete Purchase Order Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error deleting purchase order" });
+  }
+});
+
+//
+// ==========================
+// 🟣 EXPENSES
+// ==========================
+//
+
+/**
+ * @route   POST /api/billing/expenses
+ * @desc    Create a new expense (Team/Manager/Admin)
+ */
+router.post("/expenses", ensureAuthenticated, async (req, res) => {
+  try {
+    const { title, description, category, amount, date, project, attachment } = req.body;
+
+    if (!title || !amount) {
+      return res.status(400).json({ success: false, message: "Title and amount are required." });
+    }
+
+    const expense = await Expense.create({
+      title,
+      description,
+      category: category || "Miscellaneous",
+      amount,
+      date: date || new Date(),
+      project,
+      attachment,
+      user: req.user._id,
+      createdBy: req.user._id,
+      status: "Submitted",
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Expense submitted successfully",
+      expense,
+    });
+  } catch (error) {
+    console.error("❌ Create Expense Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error creating expense" });
+  }
+});
+
+/**
+ * @route   GET /api/billing/expenses
+ * @desc    Get all expenses (supports project filter, Team sees only their own)
+ */
+router.get("/expenses", ensureAuthenticated, async (req, res) => {
+  try {
+    let query = {};
+    const { project } = req.query;
+
+    if (project) {
+      query.project = project;
+    }
+
+    // Team members only see their own expenses
+    if (req.user.role === "Team") {
+      query.user = req.user._id;
+    }
+
+    const expenses = await Expense.find(query)
+      .populate("project", "name")
+      .populate("user", "name email")
+      .populate("approvedBy", "name email")
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: expenses.length,
+      expenses,
+    });
+  } catch (error) {
+    console.error("❌ Get Expenses Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error fetching expenses" });
+  }
+});
+
+/**
+ * @route   PUT /api/billing/expenses/:id
+ * @desc    Update expense (Owner or Admin/Manager)
+ */
+router.put("/expenses/:id", ensureAuthenticated, async (req, res) => {
+  try {
+    const expense = await Expense.findById(req.params.id);
+    if (!expense) return res.status(404).json({ success: false, message: "Expense not found" });
+
+    // Only owner or admin/manager can edit
+    if (req.user.role === "Team" && String(expense.user) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const updatedExpense = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    res.json({ success: true, message: "Expense updated successfully", expense: updatedExpense });
+  } catch (error) {
+    console.error("❌ Update Expense Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error updating expense" });
+  }
+});
+
+/**
+ * @route   PUT /api/billing/expenses/:id/approve
+ * @desc    Approve or reject expense (Admin/Manager only)
+ */
+router.put("/expenses/:id/approve", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+  try {
+    const { status } = req.body; // "Approved" or "Rejected"
+
+    if (!["Approved", "Rejected"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Status must be 'Approved' or 'Rejected'" });
+    }
+
+    const expense = await Expense.findByIdAndUpdate(
+      req.params.id,
+      {
+        status,
+        approvedBy: req.user._id,
+        approvedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!expense) return res.status(404).json({ success: false, message: "Expense not found" });
+
+    res.json({ success: true, message: `Expense ${status.toLowerCase()} successfully`, expense });
+  } catch (error) {
+    console.error("❌ Approve Expense Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error approving expense" });
+  }
+});
+
+/**
+ * @route   DELETE /api/billing/expenses/:id
+ * @desc    Delete expense (Owner or Admin)
+ */
+router.delete("/expenses/:id", ensureAuthenticated, async (req, res) => {
+  try {
+    const expense = await Expense.findById(req.params.id);
+    if (!expense) return res.status(404).json({ success: false, message: "Expense not found" });
+
+    // Only owner or admin can delete
+    if (req.user.role !== "Admin" && String(expense.user) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    await Expense.findByIdAndDelete(req.params.id);
+
+    res.json({ success: true, message: "Expense deleted successfully" });
+  } catch (error) {
+    console.error("❌ Delete Expense Error:", error.message);
+    res.status(500).json({ success: false, message: "Server error deleting expense" });
   }
 });
 

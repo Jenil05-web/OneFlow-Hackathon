@@ -45,6 +45,7 @@ export const authAPI = {
   getMe: () => api.get('/auth/profile'),
   forgotPassword: (data) => api.post('/auth/forgot-password', data),
   resetPassword: (data) => api.post('/auth/reset-password', data),
+  updateRole: (role) => api.put('/auth/update-role', { role }), // Dev only
 };
 
 // Dashboard API
@@ -109,18 +110,21 @@ export const billingAPI = {
   getSalesOrder: (id) => api.get(`/billing/sales-orders/${id}`),
   createSalesOrder: (data) => api.post('/billing/sales-orders', data),
   updateSalesOrder: (id, data) => api.put(`/billing/sales-orders/${id}`, data),
+  deleteSalesOrder: (id) => api.delete(`/billing/sales-orders/${id}`),
   
   // Purchase Orders
   getPurchaseOrders: (params) => api.get('/billing/purchase-orders', { params }),
   getPurchaseOrder: (id) => api.get(`/billing/purchase-orders/${id}`),
   createPurchaseOrder: (data) => api.post('/billing/purchase-orders', data),
   updatePurchaseOrder: (id, data) => api.put(`/billing/purchase-orders/${id}`, data),
+  deletePurchaseOrder: (id) => api.delete(`/billing/purchase-orders/${id}`),
   
   // Expenses
   getExpenses: (params) => api.get('/billing/expenses', { params }),
   getExpense: (id) => api.get(`/billing/expenses/${id}`),
   createExpense: (data) => api.post('/billing/expenses', data),
   updateExpense: (id, data) => api.put(`/billing/expenses/${id}`, data),
+  approveExpense: (id, status) => api.put(`/billing/expenses/${id}/approve`, { status }),
   deleteExpense: (id) => api.delete(`/billing/expenses/${id}`),
 };
 
@@ -131,6 +135,28 @@ export const analyticsAPI = {
   getRevenueTrend: (params) => api.get('/analytics/revenue-trend', { params }),
   getExpenseBreakdown: (params) => api.get('/analytics/expense-breakdown', { params }),
   getProjectPerformance: (params) => api.get('/analytics/project-performance', { params }),
+};
+
+// Admin API
+export const adminAPI = {
+  // User Management
+  getUsers: () => api.get('/admin/users'),
+  getUser: (id) => api.get(`/admin/users/${id}`),
+  createUser: (data) => api.post('/admin/users', data),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  updateUserHourlyRate: (id, hourlyRate) => api.put(`/admin/users/${id}/hourly-rate`, { hourlyRate }),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  
+  // Global Lists
+  getSalesOrders: (params) => api.get('/admin/sales-orders', { params }),
+  getPurchaseOrders: (params) => api.get('/admin/purchase-orders', { params }),
+  getInvoices: (params) => api.get('/admin/invoices', { params }),
+  getVendorBills: (params) => api.get('/admin/vendor-bills', { params }),
+  getExpenses: (params) => api.get('/admin/expenses', { params }),
+  
+  // Link documents to projects
+  linkDocumentToProject: (type, id, projectId) => 
+    api.put(`/admin/${type}/${id}/link-project`, { projectId }),
 };
 
 export default api;

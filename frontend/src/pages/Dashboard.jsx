@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { dashboardAPI, projectsAPI } from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { dashboardAPI, projectsAPI as projectAPI, adminAPI, authAPI } from "../services/api";
+import { useNavigate, Link } from "react-router-dom";
 import CreateProject from "../components/CreateProject";
+import BecomeAdmin from "../components/BecomeAdmin";
 import "./Dashboard.css";
 
 const DEFAULT_PROJECT_IMAGE = "https://images.unsplash.com/photo-1606857521015-7f9fcf423740?q=80&w=500&auto=format&fit=crop";
@@ -15,6 +16,9 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("All");
   const [showCreateProject, setShowCreateProject] = useState(false);
+  const [showBecomeAdmin, setShowBecomeAdmin] = useState(false);
+  const [adminStats, setAdminStats] = useState(null);
+  const isAdmin = user?.role === "Admin";
 
   const filters = ["All", "Planned", "In Progress", "Completed", "On Hold"];
 
@@ -28,7 +32,49 @@ const Dashboard = () => {
       return;
     }
 
-    setUser(JSON.parse(userData));
+    // Fetch latest user profile from server to ensure we have the most up-to-date role
+    const fetchUserProfile = async () => {
+      try {
+        const response = await authAPI.getMe();
+        if (response.data.success) {
+          const latestUser = response.data.user;
+          setUser(latestUser);
+          // Update localStorage with latest user data
+          localStorage.setItem("user", JSON.stringify({
+            id: latestUser._id || latestUser.id,
+            name: latestUser.name,
+            email: latestUser.email,
+            role: latestUser.role,
+          }));
+          console.log("Dashboard - Latest user role from server:", latestUser?.role);
+          
+          // Fetch admin stats if user is Admin
+          if (latestUser?.role === "Admin") {
+            console.log("Dashboard - Fetching admin stats");
+            fetchAdminStats();
+          }
+        } else {
+          // Fallback to localStorage user data
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          console.log("Dashboard - Using localStorage user role:", parsedUser?.role);
+          if (parsedUser?.role === "Admin") {
+            fetchAdminStats();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
+        // Fallback to localStorage user data
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        console.log("Dashboard - Using localStorage user role (fallback):", parsedUser?.role);
+        if (parsedUser?.role === "Admin") {
+          fetchAdminStats();
+        }
+      }
+    };
+
+    fetchUserProfile();
     fetchDashboardData();
     fetchProjects();
   }, []);
@@ -36,7 +82,9 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const response = await dashboardAPI.getDashboard();
-      setDashboardData(response.data.data || response.data);
+      const data = response.data.data || response.data;
+      setDashboardData(data);
+      console.log("Dashboard data:", data); // Debug log
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
       setError("Failed to load dashboard data");
@@ -50,7 +98,7 @@ const Dashboard = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await projectsAPI.getAll();
+      const response = await projectAPI.getAll();
       if (response.data.success) {
         setProjects(response.data.projects || []);
       }
@@ -59,6 +107,27 @@ const Dashboard = () => {
       setError("Failed to load projects");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAdminStats = async () => {
+    try {
+      const response = await adminAPI.getUsers();
+      if (response.data.success) {
+        const users = response.data.users || [];
+        const activeUsers = users.filter(u => u.isActive !== false).length;
+        const managers = users.filter(u => u.role === "Manager").length;
+        const teamMembers = users.filter(u => u.role === "Team").length;
+        
+        setAdminStats({
+          totalUsers: users.length,
+          activeUsers,
+          managers,
+          teamMembers,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch admin stats:", error);
     }
   };
 
@@ -85,6 +154,9 @@ const Dashboard = () => {
           delayedTasks: 0, // Calculate from tasks
           hoursLogged: summary.totalTimesheets || 0,
           revenueEarned: (summary.totalRevenue || 0) / 1000, // Convert to thousands
+          totalCost: (summary.totalCost || 0) / 1000,
+          totalProfit: ((summary.totalProfit || 0) / 1000),
+          totalUsers: adminStats?.totalUsers || 0,
         };
       } else if (role === "Manager") {
         return {
@@ -124,7 +196,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--gray-50)' }}>
+    <div className="min-h-screen" style={{ background: '#f9fafb' }}>
       <div className="dashboard-container">
         {/* Dashboard Header */}
         <div className="dashboard-header">
@@ -134,21 +206,52 @@ const Dashboard = () => {
                 Welcome back, {user?.name || "User"}! 👋
               </h1>
               <p className="dashboard-subtitle">
-                Here's what's happening with your projects today
+                {isAdmin 
+                  ? "Complete overview of all projects, users, and financials"
+                  : "Here's what's happening with your projects today"
+                }
               </p>
             </div>
-            <button
-              onClick={() => setShowCreateProject(true)}
-              className="create-project-btn"
-            >
-              <span className="btn-icon-wrapper">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              </span>
-              <span className="btn-text">Create New Project</span>
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              {isAdmin && (
+                <Link to="/admin" className="create-project-btn" style={{ textDecoration: 'none' }}>
+                  <span className="btn-icon-wrapper">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                      <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
+                  </span>
+                  <span className="btn-text">Admin Panel</span>
+                </Link>
+              )}
+              {!isAdmin && (
+                <button
+                  onClick={() => setShowBecomeAdmin(true)}
+                  className="create-project-btn"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+                >
+                  <span className="btn-icon-wrapper">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                      <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
+                  </span>
+                  <span className="btn-text">Become Admin</span>
+                </button>
+              )}
+              <button
+                onClick={() => setShowCreateProject(true)}
+                className="create-project-btn"
+              >
+                <span className="btn-icon-wrapper">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </span>
+                <span className="btn-text">Create New Project</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -176,21 +279,23 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="kpi-card">
-            <div className="kpi-card-header">
-              <div>
-                <div className="kpi-card-title">Delayed Tasks</div>
-                <div className="kpi-card-value">{kpis.delayedTasks}</div>
-                <div className="kpi-card-change negative">
-                  <span>⚠</span>
-                  <span>Needs attention</span>
+          {isAdmin && adminStats && (
+            <div className="kpi-card">
+              <div className="kpi-card-header">
+                <div>
+                  <div className="kpi-card-title">Total Users</div>
+                  <div className="kpi-card-value">{adminStats.totalUsers}</div>
+                  <div className="kpi-card-change positive">
+                    <span>↗</span>
+                    <span>{adminStats.activeUsers} active</span>
+                  </div>
+                </div>
+                <div className="kpi-card-icon">
+                  <span>👥</span>
                 </div>
               </div>
-              <div className="kpi-card-icon">
-                <span>⏰</span>
-              </div>
             </div>
-          </div>
+          )}
 
           <div className="kpi-card">
             <div className="kpi-card-header">
@@ -213,7 +318,7 @@ const Dashboard = () => {
               <div>
                 <div className="kpi-card-title">Revenue Earned</div>
                 <div className="kpi-card-value">
-                  {kpis.revenueEarned > 0 ? `$${kpis.revenueEarned.toFixed(1)}k` : "$0"}
+                  {kpis.revenueEarned > 0 ? `₹${kpis.revenueEarned.toFixed(1)}k` : "₹0"}
                 </div>
                 <div className="kpi-card-change positive">
                   <span>↗</span>
@@ -225,7 +330,94 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+
+          {isAdmin && kpis.totalCost !== undefined && (
+            <>
+              <div className="kpi-card">
+                <div className="kpi-card-header">
+                  <div>
+                    <div className="kpi-card-title">Total Cost</div>
+                    <div className="kpi-card-value">
+                      {kpis.totalCost > 0 ? `₹${kpis.totalCost.toFixed(1)}k` : "₹0"}
+                    </div>
+                    <div className="kpi-card-change negative">
+                      <span>↘</span>
+                      <span>Expenses</span>
+                    </div>
+                  </div>
+                  <div className="kpi-card-icon">
+                    <span>💸</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-card-header">
+                  <div>
+                    <div className="kpi-card-title">Net Profit</div>
+                    <div className={`kpi-card-value ${kpis.totalProfit >= 0 ? 'positive' : 'negative'}`}>
+                      {kpis.totalProfit !== undefined 
+                        ? `₹${Math.abs(kpis.totalProfit).toFixed(1)}k`
+                        : "₹0"
+                      }
+                    </div>
+                    <div className={`kpi-card-change ${kpis.totalProfit >= 0 ? 'positive' : 'negative'}`}>
+                      <span>{kpis.totalProfit >= 0 ? '↗' : '↘'}</span>
+                      <span>{kpis.totalProfit >= 0 ? 'Profitable' : 'Loss'}</span>
+                    </div>
+                  </div>
+                  <div className="kpi-card-icon">
+                    <span>📈</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {!isAdmin && (
+            <div className="kpi-card">
+              <div className="kpi-card-header">
+                <div>
+                  <div className="kpi-card-title">Delayed Tasks</div>
+                  <div className="kpi-card-value">{kpis.delayedTasks}</div>
+                  <div className="kpi-card-change negative">
+                    <span>⚠</span>
+                    <span>Needs attention</span>
+                  </div>
+                </div>
+                <div className="kpi-card-icon">
+                  <span>⏰</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Admin Quick Actions */}
+        {isAdmin && (
+          <div className="admin-quick-actions">
+            <div className="section-header">
+              <h2 className="projects-title">Admin Quick Actions</h2>
+            </div>
+            <div className="quick-actions-grid">
+              <Link to="/admin" className="quick-action-card">
+                <div className="quick-action-icon">👥</div>
+                <h3>Manage Users</h3>
+                <p>View and manage all users, roles, and hourly rates</p>
+              </Link>
+              <Link to="/admin/settings" className="quick-action-card">
+                <div className="quick-action-icon">⚙️</div>
+                <h3>Global Settings</h3>
+                <p>Manage Sales Orders, Purchase Orders, Invoices, and more</p>
+              </Link>
+              <div className="quick-action-card" onClick={() => setShowCreateProject(true)} style={{ cursor: 'pointer' }}>
+                <div className="quick-action-icon">📊</div>
+                <h3>System Analytics</h3>
+                <p>View comprehensive system-wide analytics and reports</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Projects Section */}
         <div className="projects-section">
@@ -337,6 +529,17 @@ const Dashboard = () => {
           <CreateProject
             onClose={() => setShowCreateProject(false)}
             onSuccess={handleProjectCreated}
+          />
+        )}
+
+        {/* Become Admin Modal */}
+        {showBecomeAdmin && (
+          <BecomeAdmin
+            onClose={() => setShowBecomeAdmin(false)}
+            onSuccess={() => {
+              setShowBecomeAdmin(false);
+              window.location.reload();
+            }}
           />
         )}
       </div>
