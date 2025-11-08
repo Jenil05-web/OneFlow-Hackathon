@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import ProjectDetails from './pages/ProjectDetails';
 
 function App() {
   return (
@@ -25,6 +26,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/project/:projectId"
+            element={
+              <PrivateRoute>
+                <ProjectDetails />
               </PrivateRoute>
             }
           />

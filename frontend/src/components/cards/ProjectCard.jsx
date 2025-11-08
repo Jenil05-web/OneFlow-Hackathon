@@ -1,7 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './ProjectCard.css';
 
 const ProjectCard = ({ project }) => {
+  const navigate = useNavigate();
+
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
       case 'in progress':
@@ -17,8 +20,12 @@ const ProjectCard = ({ project }) => {
     }
   };
 
+  const handleClick = () => {
+    navigate(`/project/${project.id}`);
+  };
+
   return (
-    <div className="project-card">
+    <div className="project-card" onClick={handleClick}>
       <div className="project-image">
         <img src={project.image || 'https://via.placeholder.com/300x150'} alt={project.title} />
       </div>
