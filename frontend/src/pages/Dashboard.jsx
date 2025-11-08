@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { dashboardAPI } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import CreateProject from "../components/CreateProject";
 import "./Dashboard.css";
 
 const DEFAULT_PROJECT_IMAGE = "https://images.unsplash.com/photo-1606857521015-7f9fcf423740?q=80&w=500&auto=format&fit=crop";
@@ -13,20 +14,13 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("All");
   const [showCreateProject, setShowCreateProject] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
 
-  // Handle image selection
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleProjectCreated = (newProject) => {
+    // Update your projects list with the new project
+    setDashboardData(prev => ({
+      ...prev,
+      projects: [...(prev?.projects || []), newProject]
+    }));
   };
 
   // Mock projects data (replace with API data when available)
@@ -115,18 +109,7 @@ const Dashboard = () => {
             className="create-project-btn"
           >
             <span className="btn-icon-wrapper">
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="btn-icon" 
-                viewBox="0 0 20 20" 
-                fill="currentColor"
-              >
-                <path 
-                  fillRule="evenodd" 
-                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" 
-                  clipRule="evenodd" 
-                />
-              </svg>
+              <i className="fas fa-plus"></i>
             </span>
             <span className="btn-text">Create New Project</span>
           </button>
@@ -301,135 +284,10 @@ const Dashboard = () => {
 
         {/* Create Project Modal */}
         {showCreateProject && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl max-w-2xl w-full">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Create New Project</h2>
-                  <button
-                    onClick={() => setShowCreateProject(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <form className="space-y-6">
-                  {/* Image Upload */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Project Image
-                    </label>
-                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
-                      <div className="space-y-2 text-center">
-                        {imagePreview ? (
-                          <div className="relative w-full aspect-video mb-4">
-                            <img
-                              src={imagePreview}
-                              alt="Preview"
-                              className="rounded-lg object-cover w-full h-full"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedImage(null);
-                                setImagePreview(null);
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex text-sm text-gray-600">
-                              <label
-                                htmlFor="file-upload"
-                                className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                              >
-                                <span>Upload a file</span>
-                                <input
-                                  id="file-upload"
-                                  name="file-upload"
-                                  type="file"
-                                  className="sr-only"
-                                  accept="image/*"
-                                  onChange={handleImageChange}
-                                />
-                              </label>
-                              <p className="pl-1">or drag and drop</p>
-                            </div>
-                            <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Project Title
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="Enter project title"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Status
-                    </label>
-                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                      <option value="planned">Planned</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="on-hold">On Hold</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Team Size
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="Enter team size"
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateProject(false)}
-                      className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                    >
-                      Create Project
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
+          <CreateProject
+            onClose={() => setShowCreateProject(false)}
+            onSuccess={handleProjectCreated}
+          />
         )}
       </div>
     </div>
