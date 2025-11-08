@@ -1,61 +1,57 @@
 // server.js
-/* eslint-disable no-console */
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import bcrypt from 'bcryptjs';
-import connectDB from './config/db.js';
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import bcrypt from "bcryptjs";
+import connectDB from "./config/db.js";
 
-// Load environment variables
 dotenv.config();
 
-// Initialize Express app
-
-// Initialize Express app
 const app = express();
 
-// Middleware: body parsers
+// ---------------------
+// 🧩 Middleware
+// ---------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware: CORS
+// CORS setup (multiple frontend ports for dev)
 app.use(
   cors({
     origin: [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:5175',
-      process.env.FRONTEND_URL
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
+      process.env.FRONTEND_URL,
     ].filter(Boolean),
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Middleware: security + request logging
+// Security headers + request logging
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
-// ============================
-// 🚀 MAIN SERVER FUNCTION
-// ============================
+// ---------------------
+// 🚀 Main Server Logic
+// ---------------------
 (async function startServer() {
   try {
-    // 1️⃣ Connect to MongoDB
+    // 1️⃣ Connect MongoDB
     await connectDB();
     console.log("✅ MongoDB Connected");
 
-    // 2️⃣ Auto-create default Admin user if missing
+    // 2️⃣ Create Default Admin (only if not exists)
     try {
       const { default: User } = await import("./models/User.js");
       const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "admin@gmail.com";
       const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin1234";
 
       const adminExists = await User.findOne({ email: adminEmail });
-
       if (!adminExists) {
         const hashed = await bcrypt.hash(adminPassword, 10);
         await User.create({
@@ -72,17 +68,11 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
       console.error("❌ Error creating default admin:", error.message);
     }
 
-    // 3️⃣ Routes (Load after DB ready)
+    // 3️⃣ Register Routes
     const { default: authRoutes } = await import("./routes/authRoutes.js");
+    const adminRoutes = (await import("./routes/adminRoutes.js")).default || (await import("./routes/adminRoutes.js"));
     app.use("/api/auth", authRoutes);
-
-    // Admin routes (optional)
-    try {
-      const { default: adminRoutes } = await import("./routes/adminRoutes.js");
-      app.use("/api/admin", adminRoutes);
-    } catch (err) {
-      console.log("ℹ️  adminRoutes not found. Create ./routes/adminRoutes.js to enable Admin endpoints.");
-    }
+    app.use("/api/admin", adminRoutes);
 
     // Project routes
     try {
@@ -96,12 +86,12 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
     app.get("/", (req, res) => {
       res.json({
         success: true,
-        message: "Hackathon Auth API is running successfully 🚀",
+        message: "OneFlow backend is running successfully 🚀",
         version: "1.0.0",
       });
     });
 
-    // Protected example route (requires auth middleware)
+    // Example protected test route (optional)
     try {
       const { protect } = await import("./middleware/authMiddleware.js");
       app.get("/api/dashboard", protect, (req, res) => {
@@ -117,7 +107,7 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
         });
       });
     } catch {
-      console.log("ℹ️  authMiddleware not found — /api/dashboard route disabled.");
+      console.log("ℹ️  authMiddleware not found — dashboard route skipped.");
     }
 
     // 404 handler
@@ -130,7 +120,7 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
     // Global error handler
     app.use((err, req, res, next) => {
-      console.error(err.stack);
+      console.error("❌ Global error:", err.stack);
       res.status(500).json({
         success: false,
         message: "Internal Server Error",
@@ -138,7 +128,7 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
       });
     });
 
-    // 4️⃣ Start HTTP Server
+    // 4️⃣ Start Server
     const PORT = process.env.PORT || 5000;
     const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
@@ -147,7 +137,7 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
     // 5️⃣ Graceful shutdown
     process.on("SIGTERM", () => {
-      console.info("SIGTERM received. Shutting down gracefully...");
+      console.info("SIGTERM received. Closing server...");
       server.close(() => {
         console.log("HTTP server closed.");
         process.exit(0);
