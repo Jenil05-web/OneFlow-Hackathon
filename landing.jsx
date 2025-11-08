@@ -36,13 +36,15 @@ return (
             <a href="#pricing" className="text-gray-600 font-medium no-underline hover:text-blue-600 transition-colors">
                 Pricing
             </a>
-            <a href="#testimonials"
+
+            {/* <a href="#testimonials"
                 className="text-gray-600 font-medium no-underline hover:text-blue-600 transition-colors">
-                Testimonials
+                
             </a>
             <a href="#blog" className="text-gray-600 font-medium no-underline hover:text-blue-600 transition-colors">
-                Blog
-            </a>
+                
+            </a> */}
+            
             <a href="#login"
                 className="bg-blue-600 text-white px-6 py-3 rounded-md font-semibold no-underline hover:bg-blue-700 transition-colors">
                 Login / Sign Up

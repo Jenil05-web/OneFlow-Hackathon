@@ -1,4 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
+import './Navbar.css';  // Add this import
+
+// ...existing code...
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -14,7 +17,7 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
-          🚀 Hackathon Auth
+          OneFlow - Plan to Bill in One Place
         </Link>
         <div className="navbar-menu">
           {token ? (

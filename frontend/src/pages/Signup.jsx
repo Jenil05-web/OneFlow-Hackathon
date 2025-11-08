@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authAPI } from "../services/api";
+// In Signup.jsx, add this import at the top
+import './Signup.css';
 
 const Signup = () => {
   const navigate = useNavigate();

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authAPI } from "../services/api";
+import './Login.css';  // Add this line at the top with other imports
 
 const Login = () => {
   const navigate = useNavigate();
