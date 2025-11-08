@@ -1,14 +1,14 @@
 // routes/authRoutes.js
-const express = require("express");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const User = require("../models/User");
+import express from "express";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import User from "../models/User.js";
 const router = express.Router();
 
 // ===========================
 // 🟢 Signup - Common for all
 // ===========================
-router.post("/signup", async (req, res) => {
+router.post(["/signup", "/register"], async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -23,17 +23,24 @@ router.post("/signup", async (req, res) => {
     }
 
     // Create user (default role = Team)
-    const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password, // The password will be hashed by the pre-save middleware
       role: "Team",
     });
 
+    // Create JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
     return res.status(201).json({
       success: true,
-      message: "Signup successful. You can now login.",
+      message: "Signup successful!",
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -56,25 +63,30 @@ router.post("/signup", async (req, res) => {
 // ===========================
 router.post("/login", async (req, res) => {
   try {
+    console.log('Login request body:', req.body); // Debug log
     const { email, password } = req.body;
 
     if (!email || !password) {
+      console.log('Missing credentials - email:', !!email, 'password:', !!password); // Debug log
       return res.status(400).json({ success: false, message: "Email and password are required" });
     }
 
     const user = await User.findOne({ email });
+    console.log('User found:', user ? 'yes' : 'no'); // Debug log
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: "Invalid credentials" });
-    }
-
-    console.log("User found:", user.email);
+    console.log("Attempting password comparison:");
     console.log("Password entered:", password);
-    console.log("Password in DB:", user.password);
+    console.log("Hashed password in DB:", user.password);
+    
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log("Password match result:", isMatch);
+    
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Invalid password" });
+    }
 
 
     // Create JWT token
@@ -129,4 +141,4 @@ router.get("/profile", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

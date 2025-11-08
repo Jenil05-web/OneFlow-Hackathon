@@ -44,10 +44,14 @@ const Signup = () => {
       });
 
       setSuccess(response.data.message);
-      localStorage.setItem("tempEmail", formData.email);
+      
+      // Store the token and user data
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
 
+      // Show success message briefly before redirect
       setTimeout(() => {
-        navigate("/verify-otp");
+        navigate('/dashboard');
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");

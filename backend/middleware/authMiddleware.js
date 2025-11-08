@@ -1,6 +1,6 @@
 // middleware/authMiddleware.js
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
 /* ------------------------------------------------------------------
    🧩 1. Protect Middleware
@@ -61,4 +61,4 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { protect, authorize };
+export { protect, authorize };

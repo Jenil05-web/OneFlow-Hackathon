@@ -1,15 +1,17 @@
 // server.js
 /* eslint-disable no-console */
-const express = require("express");
-const dotenv = require("dotenv");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const bcrypt = require("bcryptjs");
-const connectDB = require("./config/db");
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import bcrypt from 'bcryptjs';
+import connectDB from './config/db.js';
 
 // Load environment variables
 dotenv.config();
+
+// Initialize Express app
 
 // Initialize Express app
 const app = express();
@@ -21,8 +23,15 @@ app.use(express.urlencoded({ extended: true }));
 // Middleware: CORS
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      process.env.FRONTEND_URL
+    ].filter(Boolean),
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
@@ -41,7 +50,7 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
     // 2️⃣ Auto-create default Admin user if missing
     try {
-      const User = require("./models/User");
+      const { default: User } = await import("./models/User.js");
       const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "admin@gmail.com";
       const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin1234";
 
@@ -64,12 +73,12 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
     }
 
     // 3️⃣ Routes (Load after DB ready)
-    const authRoutes = require("./routes/authRoutes");
+    const { default: authRoutes } = await import("./routes/authRoutes.js");
     app.use("/api/auth", authRoutes);
 
     // Admin routes (optional)
     try {
-      const adminRoutes = require("./routes/adminRoutes");
+      const { default: adminRoutes } = await import("./routes/adminRoutes.js");
       app.use("/api/admin", adminRoutes);
     } catch (err) {
       console.log("ℹ️  adminRoutes not found. Create ./routes/adminRoutes.js to enable Admin endpoints.");
@@ -86,7 +95,7 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
     // Protected example route (requires auth middleware)
     try {
-      const { protect } = require("./middleware/authMiddleware");
+      const { protect } = await import("./middleware/authMiddleware.js");
       app.get("/api/dashboard", protect, (req, res) => {
         res.json({
           success: true,

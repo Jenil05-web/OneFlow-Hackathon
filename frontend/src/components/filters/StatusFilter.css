@@ -1,0 +1,65 @@
+.status-filter {
+  margin-bottom: 2rem;
+}
+
+.filter-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: white;
+  color: #4a5568;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-button:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.filter-button.active {
+  background: #2b6cb0;
+  color: white;
+  border-color: #2b6cb0;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.all {
+  background-color: #4a5568;
+}
+
+.status-dot.planned {
+  background-color: #805ad5;
+}
+
+.status-dot.in-progress {
+  background-color: #3182ce;
+}
+
+.status-dot.completed {
+  background-color: #38a169;
+}
+
+.status-dot.on-hold {
+  background-color: #e53e3e;
+}
+
+/* Active state dots */
+.filter-button.active .status-dot {
+  background-color: white;
+}
