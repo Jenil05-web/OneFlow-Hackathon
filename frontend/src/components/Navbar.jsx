@@ -1,7 +1,4 @@
 import { Link, useNavigate } from "react-router-dom";
-import './Navbar.css';  // Add this import
-
-// ...existing code...
 
 const Navbar = () => {
   const navigate = useNavigate();
