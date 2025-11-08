@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Aaryan Soni - BCA Student & Web Developer | Portfolio</title>
+        <link rel="stylesheet" href="landing(temp).css">
+    </head>
+
+    <body>
+
+        <nav>
+            <div class="nav-container">
+                <a href="#" class="logo">
+                    OneFlow
+                </a>
+
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#testimonials">Testimonials</a></li>
+                    <li><a href="#blog">Blog</a></li>
+                </ul>
+
+                <div class="nav-buttons">
+                    <a href="#" class="btn-primary">Login/SignUp</a>
+                </div>
+
+                <div class="menu-toggle" onclick="toggleMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <div class="hero-container">
+                <div class="hero-content">
+                    <h1 class="hero-title">OneFlow. <br> Plan, Execute & Bill. <br> All In One Place</h1>
+                    <p class="hero-description">
+                        Streamline Projects, Maximize Profitability, Unify Your Workflow
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="#" class="btn-primary">Start Your Free Trial</a>
+                        <a href="#" class="btn-secondary">Watch Demo</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="" alt="OneFlow platform dashboard on a laptop">
+                </div>
+            </div>
+        </header>
+
+        <section class="features">
+            <div class="features-container">
+                <h2 class="section-title">Testimonials</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" ...>...</svg>
+                        </div>
+                        <h3>Project Planning</h3>
+                        <p>Clearly plan all your projects from start to finish with our easy-to-use tools.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" ...>...</svg>
+                        </div>
+                        <h3>Task Planning</h3>
+                        <p>Organize every task, set deadlines, and assign them to your team members.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" ...>...</svg>
+                        </div>
+                        <h3>Task Management</h3>
+                        <p>Track the progress of all your tasks in one simple dashboard.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" ...>...</svg>
+                        </div>
+                        <h3>Real-Time Analytics</h3>
+                        <p>See live data and reports on your project's performance and budget.</p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-container">
+                <div class="footer-col">
+                    <h3>Contact Us</h3>
+                    <p>+91 981-555-1234</p>
+                    <p>+91 981-555-5678</p>
+                    <p>hello@oneflow.com</p>
+                </div>
+
+                <div class="footer-col">
+                    <h3>Company</h3>
+                    <a href="#">About Us</a>
+                    <a href="#">Careers</a>
+                    <a href="#">Blog</a>
+                    <a href="#">Contact</a>
+                </div>
+
+                <div class="footer-col">
+                    <h3>Resources</h3>
+                    <a href="#">Features</a>
+                    <a href="#">Pricing</a>
+                    <a href="#">Help Center</a>
+                    <a href="#">Testimonials</a>
+                </div>
+
+            </div>
+        </footer>
+
+        <script>
+            function toggleMenu() {
+                const navLinks = document.getElementById('navLinks');
+                navLinks.classList.toggle('active');
+            }
+        </script>
+    </body>
+
+</html>
