@@ -1,10 +1,23 @@
 import { useState, useEffect } from "react";
+import styled from "styled-components";
+import ProjectCard from "../components/cards/ProjectCard";
+import KpiWidget from "../components/cards/KpiWidget";
+import StatusFilter from "../components/filters/StatusFilter";
 import { dashboardAPI } from "../services/api";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [kpiData, setKpiData] = useState({
+    activeProjects: 0,
+    delayedTasks: 0,
+    hoursLogged: 0,
+    revenueEarned: 0,
+  });
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -19,10 +32,36 @@ const Dashboard = () => {
     try {
       const response = await dashboardAPI.getDashboard();
       setDashboardData(response.data);
+      setProjects(response.data.projects); // Assuming the response contains projects data
+      setFilteredProjects(response.data.projects); // Initialize filteredProjects
+      calculateKpiData(response.data.projects); // Calculate KPI data
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const calculateKpiData = (projects) => {
+    const activeProjects = projects.filter((project) => project.status === "active").length;
+    const delayedTasks = projects.filter((project) => project.status === "delayed").length;
+    const hoursLogged = projects.reduce((total, project) => total + project.hoursLogged, 0);
+    const revenueEarned = projects.reduce((total, project) => total + project.revenue, 0);
+
+    setKpiData({
+      activeProjects,
+      delayedTasks,
+      hoursLogged,
+      revenueEarned,
+    });
+  };
+
+  const handleFilterChange = (status) => {
+    setActiveFilter(status);
+    if (status === "all") {
+      setFilteredProjects(projects);
+    } else {
+      setFilteredProjects(projects.filter((project) => project.status === status));
     }
   };
 
@@ -35,98 +74,51 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-container">
-        <div className="dashboard-header">
-          <h1>Welcome, {user?.name}! 🎉</h1>
-          <p>You've successfully logged in to your dashboard</p>
-        </div>
-
-        <div className="dashboard-content">
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">👤</div>
-              <div className="stat-info">
-                <h3>Full Name</h3>
-                <p>{user?.name}</p>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">📧</div>
-              <div className="stat-info">
-                <h3>Email</h3>
-                <p>{user?.email}</p>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">✅</div>
-              <div className="stat-info">
-                <h3>Status</h3>
-                <p
-                  className={
-                    user?.isVerified ? "status-verified" : "status-unverified"
-                  }
-                >
-                  {user?.isVerified ? "Verified" : "Unverified"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card quick-start">
-            <h2>🚀 Quick Start Guide</h2>
-            <ul className="check-list">
-              <li className="check-item">
-                <span className="check-mark">✓</span>
-                Your account has been successfully created and verified
-              </li>
-              <li className="check-item">
-                <span className="check-mark">✓</span>
-                You're now logged in and can access protected routes
-              </li>
-              <li className="check-item">
-                <span className="arrow-mark">→</span>
-                Start building your hackathon project by integrating this auth
-                system
-              </li>
-            </ul>
-          </div>
-
-          {dashboardData && (
-            <div className="api-response-card">
-              <strong>Protected Route Response:</strong> {dashboardData.message}
-            </div>
-          )}
-
-          <div className="info-grid">
-            <div className="card">
-              <h3>📚 Features</h3>
-              <ul className="feature-list">
-                <li>JWT-based authentication</li>
-                <li>Email OTP verification</li>
-                <li>Password reset functionality</li>
-                <li>Protected routes</li>
-                <li>Modern UI with CSS</li>
-              </ul>
-            </div>
-
-            <div className="card">
-              <h3>🛠️ Tech Stack</h3>
-              <ul className="feature-list">
-                <li>Node.js + Express</li>
-                <li>MongoDB + Mongoose</li>
-                <li>React.js + Vite</li>
-                <li>Vanilla CSS</li>
-                <li>Axios for API calls</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+    <DashboardContainer>
+      <div className="dashboard-header">
+        <h1>Welcome, {user?.name}! 🎉</h1>
+        <p>You've successfully logged in to your dashboard</p>
       </div>
-    </div>
+
+      <KpiSection>
+        <KpiWidget title="Active Projects" value={kpiData.activeProjects} icon="project" />
+        <KpiWidget title="Delayed Tasks" value={kpiData.delayedTasks} icon="warning" />
+        <KpiWidget title="Hours Logged" value={kpiData.hoursLogged} icon="clock" />
+        <KpiWidget title="Revenue Earned" value={kpiData.revenueEarned} icon="dollar" />
+      </KpiSection>
+
+      <FilterSection>
+        <StatusFilter activeFilter={activeFilter} onFilterChange={handleFilterChange} />
+      </FilterSection>
+
+      <ProjectsGrid>
+        {filteredProjects.map((project) => (
+          <ProjectCard key={project._id} project={project} />
+        ))}
+      </ProjectsGrid>
+    </DashboardContainer>
   );
 };
+
+const DashboardContainer = styled.div`
+  padding: 2rem;
+`;
+
+const KpiSection = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+const FilterSection = styled.div`
+  margin-bottom: 2rem;
+`;
+
+const ProjectsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+`;
 
 export default Dashboard;
