@@ -84,6 +84,14 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
       console.log("ℹ️  adminRoutes not found. Create ./routes/adminRoutes.js to enable Admin endpoints.");
     }
 
+    // Project routes
+    try {
+      const { default: projectRoutes } = await import("./routes/projectRoutes.js");
+      app.use("/api/projects", projectRoutes);
+    } catch (err) {
+      console.log("ℹ️  projectRoutes not found. Create ./routes/projectRoutes.js to enable Project endpoints.");
+    }
+
     // Health check route
     app.get("/", (req, res) => {
       res.json({

@@ -3,6 +3,8 @@ import { dashboardAPI } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
+const DEFAULT_PROJECT_IMAGE = "https://images.unsplash.com/photo-1606857521015-7f9fcf423740?q=80&w=500&auto=format&fit=crop";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -10,15 +12,31 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("All");
+  const [showCreateProject, setShowCreateProject] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  // Handle image selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Mock projects data (replace with API data when available)
   const [projects] = useState([
-    { id: 1, title: 'Project Alpha', status: 'In Progress', progress: 75, dueDate: '2025-12-15', team: 5 },
-    { id: 2, title: 'Project Beta', status: 'Planned', progress: 0, dueDate: '2025-11-20', team: 3 },
-    { id: 3, title: 'Project Gamma', status: 'Completed', progress: 100, dueDate: '2025-10-30', team: 8 },
-    { id: 4, title: 'Project Delta', status: 'In Progress', progress: 45, dueDate: '2025-11-25', team: 6 },
-    { id: 5, title: 'Project Epsilon', status: 'On Hold', progress: 30, dueDate: '2025-12-01', team: 4 },
-    { id: 6, title: 'Project Zeta', status: 'In Progress', progress: 60, dueDate: '2025-11-18', team: 7 },
+    { id: 1, title: 'Project Alpha', status: 'In Progress', progress: 75, dueDate: '2025-12-15', team: 5, image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=500&auto=format&fit=crop' },
+    { id: 2, title: 'Project Beta', status: 'Planned', progress: 0, dueDate: '2025-11-20', team: 3, image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=500&auto=format&fit=crop' },
+    { id: 3, title: 'Project Gamma', status: 'Completed', progress: 100, dueDate: '2025-10-30', team: 8, image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=500&auto=format&fit=crop' },
+    { id: 4, title: 'Project Delta', status: 'In Progress', progress: 45, dueDate: '2025-11-25', team: 6, image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=500&auto=format&fit=crop' },
+    { id: 5, title: 'Project Epsilon', status: 'On Hold', progress: 30, dueDate: '2025-12-01', team: 4, image: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=500&auto=format&fit=crop' },
+    { id: 6, title: 'Project Zeta', status: 'In Progress', progress: 60, dueDate: '2025-11-18', team: 7, image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=500&auto=format&fit=crop' },
   ]);
 
   const filters = ["All", "Planned", "In Progress", "Completed", "On Hold"];
@@ -83,13 +101,35 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Dashboard Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.name}! 👋
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Here's what's happening with your projects today
-          </p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Welcome back, {user?.name}! 👋
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Here's what's happening with your projects today
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCreateProject(true)}
+            className="create-project-btn"
+          >
+            <span className="btn-icon-wrapper">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="btn-icon" 
+                viewBox="0 0 20 20" 
+                fill="currentColor"
+              >
+                <path 
+                  fillRule="evenodd" 
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" 
+                  clipRule="evenodd" 
+                />
+              </svg>
+            </span>
+            <span className="btn-text">Create New Project</span>
+          </button>
         </div>
 
         {/* KPI Widgets */}
@@ -174,13 +214,27 @@ const Dashboard = () => {
           {filteredProjects.map((project) => (
             <div
               key={project.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all cursor-pointer group"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
+              onClick={() => navigate(`/project/${project.id}`)}
             >
-              {/* Project Header */}
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                  {project.title}
-                </h3>
+              {/* Project Image */}
+              <div className="w-full h-48 overflow-hidden">
+                <img 
+                  src={project.image || DEFAULT_PROJECT_IMAGE} 
+                  alt={project.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = DEFAULT_PROJECT_IMAGE;
+                  }}
+                />
+              </div>
+              
+              <div className="p-6">
+                {/* Project Header */}
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                    {project.title}
+                  </h3>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     project.status === "In Progress"
@@ -230,6 +284,7 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
           ))}
         </div>
 
@@ -241,6 +296,139 @@ const Dashboard = () => {
             <p className="text-gray-600">
               No projects match the selected filter. Try selecting a different filter.
             </p>
+          </div>
+        )}
+
+        {/* Create Project Modal */}
+        {showCreateProject && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl max-w-2xl w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Create New Project</h2>
+                  <button
+                    onClick={() => setShowCreateProject(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form className="space-y-6">
+                  {/* Image Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Project Image
+                    </label>
+                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+                      <div className="space-y-2 text-center">
+                        {imagePreview ? (
+                          <div className="relative w-full aspect-video mb-4">
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              className="rounded-lg object-cover w-full h-full"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedImage(null);
+                                setImagePreview(null);
+                              }}
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex text-sm text-gray-600">
+                              <label
+                                htmlFor="file-upload"
+                                className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
+                              >
+                                <span>Upload a file</span>
+                                <input
+                                  id="file-upload"
+                                  name="file-upload"
+                                  type="file"
+                                  className="sr-only"
+                                  accept="image/*"
+                                  onChange={handleImageChange}
+                                />
+                              </label>
+                              <p className="pl-1">or drag and drop</p>
+                            </div>
+                            <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Project Title
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Enter project title"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                      <option value="planned">Planned</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="on-hold">On Hold</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Due Date
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Team Size
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Enter team size"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateProject(false)}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                      Create Project
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         )}
       </div>

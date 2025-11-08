@@ -1,0 +1,23 @@
+.kanban-column {
+  background-color: #f4f5f7;
+  border-radius: 8px;
+  width: 300px;
+  padding: 15px;
+  margin: 0 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.column-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding: 0 5px;
+}
+
+.task-list {
+  background-color: #f4f5f7;
+  flex-grow: 1;
+  min-height: 100px;
+  padding: 5px;
+}
