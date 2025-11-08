@@ -17,8 +17,6 @@ const AdminDashboard = () => {
     name: "",
     email: "",
     role: "Team",
-    hourlyRate: 0,
-    isActive: true,
   });
 
   useEffect(() => {
@@ -45,8 +43,6 @@ const AdminDashboard = () => {
       name: user.name,
       email: user.email,
       role: user.role,
-      hourlyRate: user.hourlyRate || 0,
-      isActive: user.isActive !== undefined ? user.isActive : true,
     });
   };
 
@@ -58,16 +54,6 @@ const AdminDashboard = () => {
       setError("");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update user");
-    }
-  };
-
-  const handleUpdateHourlyRate = async (userId, hourlyRate) => {
-    try {
-      await adminAPI.updateUserHourlyRate(userId, hourlyRate);
-      await fetchUsers();
-      setError("");
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to update hourly rate");
     }
   };
 
@@ -126,7 +112,7 @@ const AdminDashboard = () => {
       <div className="admin-container">
         <div className="admin-header">
           <h1 className="admin-title">Admin Dashboard</h1>
-          <p className="admin-subtitle">Manage users, roles, and hourly rates</p>
+          <p className="admin-subtitle">Manage users and roles</p>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -198,14 +184,12 @@ const AdminDashboard = () => {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Hourly Rate</th>
-                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((user) => (
-                  <tr key={user._id} className={!user.isActive ? "inactive" : ""}>
+                  <tr key={user._id}>
                     <td>
                       {editingUser === user._id ? (
                         <input
@@ -250,67 +234,6 @@ const AdminDashboard = () => {
                       ) : (
                         <span className={getRoleBadgeClass(user.role)}>
                           {user.role}
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {editingUser === user._id ? (
-                        <div className="hourly-rate-input">
-                          <span className="currency">₹</span>
-                          <input
-                            type="number"
-                            value={editForm.hourlyRate}
-                            onChange={(e) =>
-                              setEditForm({
-                                ...editForm,
-                                hourlyRate: parseFloat(e.target.value) || 0,
-                              })
-                            }
-                            className="form-input-small"
-                            min="0"
-                            step="0.01"
-                          />
-                          <span className="unit">/hour</span>
-                        </div>
-                      ) : (
-                        <div className="hourly-rate-display">
-                          <span className="rate-value">₹{user.hourlyRate || 0}</span>
-                          <span className="rate-unit">/hour</span>
-                          <button
-                            className="btn-icon"
-                            onClick={() => {
-                              const newRate = prompt(
-                                `Enter new hourly rate for ${user.name}:`,
-                                user.hourlyRate || 0
-                              );
-                              if (newRate !== null) {
-                                handleUpdateHourlyRate(user._id, parseFloat(newRate) || 0);
-                              }
-                            }}
-                            title="Update hourly rate"
-                          >
-                            ✏️
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      {editingUser === user._id ? (
-                        <label className="toggle-switch">
-                          <input
-                            type="checkbox"
-                            checked={editForm.isActive}
-                            onChange={(e) =>
-                              setEditForm({ ...editForm, isActive: e.target.checked })
-                            }
-                          />
-                          <span className="toggle-slider"></span>
-                        </label>
-                      ) : (
-                        <span
-                          className={`status-badge ${user.isActive ? "active" : "inactive"}`}
-                        >
-                          {user.isActive ? "Active" : "Inactive"}
                         </span>
                       )}
                     </td>

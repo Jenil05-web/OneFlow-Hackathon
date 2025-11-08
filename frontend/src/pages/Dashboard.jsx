@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { projectsAPI as projectAPI, authAPI } from "../services/api";
+import { projectsAPI as projectAPI, authAPI, tasksAPI, timesheetsAPI } from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import CreateProject from "../components/CreateProject";
 import "./Dashboard.css";
@@ -13,7 +13,17 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateProject, setShowCreateProject] = useState(false);
+  const [teamStats, setTeamStats] = useState({
+    assignedTasks: 0,
+    completedTasks: 0,
+    hoursLogged: 0,
+    pendingTimesheets: 0,
+  });
+  const [searchQuery, setSearchQuery] = useState("");
   const isAdmin = user?.role === "Admin";
+  const isManager = user?.role === "Manager";
+  const isTeam = user?.role === "Team";
+  const canCreateProject = isAdmin || isManager;
 
 
   useEffect(() => {
@@ -59,6 +69,50 @@ const Dashboard = () => {
     fetchUserProfile();
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    if (isTeam && user) {
+      fetchTeamStats();
+    }
+  }, [isTeam, user]);
+
+  const fetchTeamStats = async () => {
+    try {
+      const userId = user._id || user.id;
+      
+      // Fetch assigned tasks - Team members automatically see only their tasks
+      const tasksResponse = await tasksAPI.getAll();
+      const allTasks = tasksResponse.data.tasks || [];
+      // Filter tasks assigned to this user (backend already filters for Team, but we double-check)
+      const tasks = allTasks.filter(t => {
+        const assigneeId = t.assignedTo?._id || t.assignedTo?.id || t.assignedTo;
+        return assigneeId === userId || String(assigneeId) === String(userId);
+      });
+      
+      // Fetch timesheets
+      const timesheetsResponse = await timesheetsAPI.getAll();
+      const allTimesheets = timesheetsResponse.data.timesheets || [];
+      // Filter timesheets for this user
+      const timesheets = allTimesheets.filter(ts => {
+        const tsUserId = ts.user?._id || ts.user?.id || ts.user;
+        return tsUserId === userId || String(tsUserId) === String(userId);
+      });
+      
+      const assignedTasks = tasks.length;
+      const completedTasks = tasks.filter(t => t.status === 'Completed').length;
+      const totalHours = timesheets.reduce((sum, ts) => sum + (ts.hours || 0), 0);
+      const pendingTimesheets = timesheets.filter(ts => !ts.approved).length;
+      
+      setTeamStats({
+        assignedTasks,
+        completedTasks,
+        hoursLogged: totalHours,
+        pendingTimesheets,
+      });
+    } catch (error) {
+      console.error("Failed to fetch team stats:", error);
+    }
+  };
 
 
   const fetchProjects = async () => {
@@ -116,18 +170,20 @@ const Dashboard = () => {
                   <span className="btn-text">Admin Panel</span>
                 </Link>
               )}
-              <button
-                onClick={() => setShowCreateProject(true)}
-                className="create-project-btn"
-              >
-                <span className="btn-icon-wrapper">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                </span>
-                <span className="btn-text">Create New Project</span>
-              </button>
+              {canCreateProject && (
+                <button
+                  onClick={() => setShowCreateProject(true)}
+                  className="create-project-btn"
+                >
+                  <span className="btn-icon-wrapper">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </span>
+                  <span className="btn-text">Create New Project</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -164,11 +220,88 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* Team Member Quick Stats */}
+        {isTeam && (
+          <div className="team-stats-section">
+            <div className="team-stats-grid">
+              <div className="team-stat-card">
+                <div className="team-stat-icon">📋</div>
+                <div className="team-stat-content">
+                  <div className="team-stat-value">{teamStats.assignedTasks}</div>
+                  <div className="team-stat-label">Assigned Tasks</div>
+                </div>
+              </div>
+              <div className="team-stat-card">
+                <div className="team-stat-icon">✅</div>
+                <div className="team-stat-content">
+                  <div className="team-stat-value">{teamStats.completedTasks}</div>
+                  <div className="team-stat-label">Completed</div>
+                </div>
+              </div>
+              <div className="team-stat-card">
+                <div className="team-stat-icon">⏱️</div>
+                <div className="team-stat-content">
+                  <div className="team-stat-value">{teamStats.hoursLogged}h</div>
+                  <div className="team-stat-label">Hours Logged</div>
+                </div>
+              </div>
+              <div className="team-stat-card">
+                <div className="team-stat-icon">📝</div>
+                <div className="team-stat-content">
+                  <div className="team-stat-value">{teamStats.pendingTimesheets}</div>
+                  <div className="team-stat-label">Pending Timesheets</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Projects Section */}
         <div className="projects-section">
+          {/* Search Bar for Team Members */}
+          {isTeam && (
+            <div className="projects-search-container">
+              <div className="search-input-wrapper">
+                <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search your assigned projects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="projects-search-input"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="search-clear-btn"
+                    aria-label="Clear search"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Project Cards Grid */}
           <div className="projects-grid">
-            {projects.map((project) => (
+            {projects
+              .filter(project => {
+                if (!searchQuery) return true;
+                const query = searchQuery.toLowerCase();
+                return (
+                  project.name?.toLowerCase().includes(query) ||
+                  project.description?.toLowerCase().includes(query) ||
+                  project.status?.toLowerCase().includes(query)
+                );
+              })
+              .map((project) => (
               <div
                 key={project._id || project.id}
                 className="project-card"

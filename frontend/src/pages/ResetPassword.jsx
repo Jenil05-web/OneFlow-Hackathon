@@ -11,6 +11,7 @@ const ResetPassword = () => {
   });
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -53,7 +54,7 @@ const ResetPassword = () => {
     try {
       const response = await authAPI.resetPassword({
         email,
-        otp: formData.otp,
+        otp: formData.otp.trim(),
         newPassword: formData.newPassword,
       });
 
@@ -64,9 +65,26 @@ const ResetPassword = () => {
         navigate('/login');
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Password reset failed');
+      console.error('Reset password error:', err);
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Password reset failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setError('');
+    setSuccess('');
+    setResendLoading(true);
+
+    try {
+      const response = await authAPI.forgotPassword({ email });
+      setSuccess(response.data.message || 'OTP resent successfully!');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to resend OTP');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -151,6 +169,17 @@ const ResetPassword = () => {
             {loading ? 'Resetting...' : 'Reset Password'}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-600 mb-2 text-sm">Didn't receive the code?</p>
+          <button
+            onClick={handleResendOTP}
+            disabled={resendLoading}
+            className="text-indigo-600 font-medium hover:text-indigo-700 disabled:text-indigo-400 transition text-sm"
+          >
+            {resendLoading ? 'Sending...' : 'Resend OTP'}
+          </button>
+        </div>
       </div>
     </div>
   );

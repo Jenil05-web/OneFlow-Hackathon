@@ -44,13 +44,18 @@ const Signup = () => {
         password: formData.password,
       });
 
-      setSuccess(response.data.message || "Account created successfully!");
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-
+      setSuccess("Account created successfully! Redirecting to login page...");
+      
+      // Don't save token - user needs to login (professional flow)
+      // Redirect to login page after showing success message
       setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
+        navigate("/login", { 
+          state: { 
+            message: "Account created successfully! Please sign in to continue.",
+            email: formData.email 
+          } 
+        });
+      }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {

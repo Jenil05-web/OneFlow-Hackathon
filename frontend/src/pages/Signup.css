@@ -154,5 +154,60 @@ input:focus {
 }
 
 .signup-footer a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
+}
+
+/* ============================================
+   DARK THEME STYLES
+   ============================================ */
+
+[data-theme="dark"] .signup-page {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .signup-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--gray-700);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .signup-header h2 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .signup-header p {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] label {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] input {
+  background: var(--bg-tertiary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] input:focus {
+  border-color: var(--primary-400);
+  background: var(--bg-secondary);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+[data-theme="dark"] .btn-signup {
+  background: var(--primary-600);
+}
+
+[data-theme="dark"] .btn-signup:hover:not(:disabled) {
+  background: var(--primary-500);
+}
+
+[data-theme="dark"] .signup-footer p {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .signup-footer a {
+  color: var(--primary-400);
 }

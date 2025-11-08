@@ -1,20 +1,33 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { authAPI } from "../services/api";
 import "./Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
-    email: "",
+    email: location.state?.email || "",
     password: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(location.state?.message || "");
+
+  useEffect(() => {
+    // Clear success message after 5 seconds
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
+    setSuccess(""); // Clear success message when user starts typing
   };
 
   const handleSubmit = async (e) => {
@@ -41,9 +54,16 @@ const Login = () => {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <h2>Welcome Back</h2>
-          <p>Please enter your details to sign in.</p>
+          <h2>{success ? "Account Created!" : "Welcome Back"}</h2>
+          <p>{success ? "Please sign in to access your account." : "Please enter your details to sign in."}</p>
         </div>
+
+        {success && (
+          <div className="alert-success" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <span>{success}</span>
+          </div>
+        )}
 
         {error && (
           <div className="alert-error" role="alert">

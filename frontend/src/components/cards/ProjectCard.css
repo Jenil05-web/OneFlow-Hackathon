@@ -440,3 +440,52 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* ============================================
+   DARK THEME STYLES
+   ============================================ */
+
+[data-theme="dark"] .project-card {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border-color: var(--gray-700);
+}
+
+[data-theme="dark"] .project-title {
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="dark"] .project-card:hover .project-title {
+  background: linear-gradient(135deg, var(--primary-400) 0%, var(--primary-500) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="dark"] .project-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .project-card:hover .project-description {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .progress-bar-container {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .project-due-date {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .project-card:hover .project-due-date {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .project-footer {
+  border-top-color: var(--gray-700);
+}

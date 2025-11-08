@@ -8,6 +8,13 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ["Admin", "Manager", "Team"], default: "Team" },
   hourlyRate: { type: Number, default: 0 }, // Per hour rate set by admin
   isActive: { type: Boolean, default: true },
+  // Email verification OTP
+  otp: { type: String, select: false },
+  otpExpiry: { type: Date, select: false },
+  isVerified: { type: Boolean, default: false },
+  // Password reset OTP
+  resetPasswordOTP: { type: String, select: false },
+  resetPasswordOTPExpiry: { type: Date, select: false },
 }, {
   timestamps: true,
 });

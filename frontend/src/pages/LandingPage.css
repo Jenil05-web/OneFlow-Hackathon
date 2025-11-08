@@ -828,3 +828,199 @@
   }
 }
 
+/* ============================================
+   DARK THEME STYLES
+   ============================================ */
+
+[data-theme="dark"] .landing-page {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .landing-nav {
+  background: rgba(15, 23, 42, 0.8);
+  border-bottom-color: var(--gray-700);
+}
+
+[data-theme="dark"] .landing-nav.scrolled {
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .nav-logo {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .logo-text {
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="dark"] .nav-link-button {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .nav-link-button:hover {
+  color: var(--primary-400);
+}
+
+[data-theme="dark"] .mobile-menu-toggle span {
+  background: var(--text-primary);
+}
+
+[data-theme="dark"] .hero-section {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .hero-background {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 50%, var(--bg-secondary) 100%);
+  opacity: 0.3;
+}
+
+[data-theme="dark"] .hero-badge {
+  background: rgba(129, 140, 248, 0.15);
+  border-color: rgba(129, 140, 248, 0.3);
+  color: var(--primary-400);
+}
+
+[data-theme="dark"] .hero-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .hero-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .btn-secondary-large {
+  background: var(--bg-secondary);
+  color: var(--primary-400);
+  border-color: var(--primary-500);
+}
+
+[data-theme="dark"] .btn-secondary-large:hover {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .hero-stats {
+  border-top-color: var(--gray-700);
+}
+
+[data-theme="dark"] .stat-number {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .stat-label {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .features-section {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .section-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .section-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .feature-card {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .feature-card:hover {
+  border-color: var(--primary-500);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .feature-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .feature-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .pricing-section {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .pricing-card {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+}
+
+[data-theme="dark"] .pricing-card.featured {
+  border-color: var(--primary-500);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .pricing-name {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .price-amount {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .price-period {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .pricing-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .pricing-features li {
+  color: var(--text-secondary);
+  border-bottom-color: var(--gray-700);
+}
+
+[data-theme="dark"] .cta-section {
+  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+}
+
+[data-theme="dark"] .landing-footer {
+  background: var(--bg-secondary);
+  border-top-color: var(--gray-700);
+}
+
+[data-theme="dark"] .footer-logo {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .footer-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .footer-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .footer-links a,
+[data-theme="dark"] .footer-links button {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .footer-links a:hover,
+[data-theme="dark"] .footer-links button:hover {
+  color: var(--primary-400);
+}
+
+[data-theme="dark"] .footer-bottom {
+  border-top-color: var(--gray-700);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  [data-theme="dark"] .nav-menu {
+    background: var(--bg-secondary);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+}
+

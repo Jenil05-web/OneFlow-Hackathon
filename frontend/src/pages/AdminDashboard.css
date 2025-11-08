@@ -371,3 +371,121 @@
   }
 }
 
+/* ============================================
+   DARK THEME STYLES
+   ============================================ */
+
+[data-theme="dark"] .admin-dashboard {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .admin-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .admin-subtitle {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .admin-actions .btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--gray-700);
+}
+
+[data-theme="dark"] .admin-actions .btn-secondary:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--primary-500);
+}
+
+[data-theme="dark"] .users-section {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+}
+
+[data-theme="dark"] .section-header {
+  border-bottom-color: var(--gray-700);
+}
+
+[data-theme="dark"] .section-header h2 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .role-tabs {
+  border-bottom-color: var(--gray-700);
+}
+
+[data-theme="dark"] .tab-button {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .tab-button:hover {
+  color: var(--primary-400);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .tab-button.active {
+  color: var(--primary-400);
+  border-bottom-color: var(--primary-400);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .users-count {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .users-table thead {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .users-table th {
+  color: var(--text-primary);
+  border-bottom-color: var(--gray-700);
+}
+
+[data-theme="dark"] .users-table td {
+  border-bottom-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .users-table tbody tr:hover {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .currency,
+[data-theme="dark"] .rate-value {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .rate-unit,
+[data-theme="dark"] .unit {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .form-input-small,
+[data-theme="dark"] .form-select-small {
+  background: var(--bg-tertiary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-input-small:focus,
+[data-theme="dark"] .form-select-small:focus {
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+[data-theme="dark"] .status-badge.inactive {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .toggle-slider {
+  background-color: var(--gray-700);
+}
+
+[data-theme="dark"] .btn-icon:hover {
+  background: var(--bg-tertiary);
+}
+

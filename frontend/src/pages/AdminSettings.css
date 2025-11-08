@@ -151,3 +151,61 @@
   }
 }
 
+/* ============================================
+   DARK THEME STYLES
+   ============================================ */
+
+[data-theme="dark"] .admin-settings {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .back-link {
+  color: var(--primary-400);
+}
+
+[data-theme="dark"] .back-link:hover {
+  color: var(--primary-300);
+}
+
+[data-theme="dark"] .settings-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .settings-subtitle {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .settings-tabs {
+  border-bottom-color: var(--gray-700);
+}
+
+[data-theme="dark"] .settings-tab {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .settings-tab:hover {
+  color: var(--primary-400);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .settings-tab.active {
+  color: var(--primary-400);
+  border-bottom-color: var(--primary-400);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .settings-content {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .coming-soon h2 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .coming-soon p {
+  color: var(--text-secondary);
+}
+

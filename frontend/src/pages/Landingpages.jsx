@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "../components/ThemeToggle";
 import "./LandingPage.css";
 
 export default function OneFlowLanding() {
@@ -48,6 +49,7 @@ export default function OneFlowLanding() {
             <Link to="/login" className="nav-link-button">
               Login
             </Link>
+            <ThemeToggle />
             <Link to="/signup" className="nav-cta">
               Get Started
             </Link>
@@ -102,16 +104,16 @@ export default function OneFlowLanding() {
             </div>
             <div className="hero-stats">
               <div className="stat-item">
-                <div className="stat-number">10K+</div>
-                <div className="stat-label">Active Users</div>
+                <div className="stat-number"></div>
+                <div className="stat-label"></div>
               </div>
               <div className="stat-item">
-                <div className="stat-number">50K+</div>
-                <div className="stat-label">Projects Managed</div>
+                <div className="stat-number"></div>
+                <div className="stat-label"></div>
               </div>
               <div className="stat-item">
-                <div className="stat-number">99.9%</div>
-                <div className="stat-label">Uptime</div>
+                <div className="stat-number"></div>
+                <div className="stat-label"></div>
               </div>
             </div>
           </div>
@@ -274,82 +276,6 @@ export default function OneFlowLanding() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="pricing-section">
-        <div className="section-container">
-          <div className="section-header">
-            <h2 className="section-title">
-              Simple, Transparent <span className="gradient-text">Pricing</span>
-            </h2>
-            <p className="section-description">
-              Choose the plan that fits your team size and needs
-            </p>
-          </div>
-
-          <div className="pricing-grid">
-            <div className="pricing-card">
-              <div className="pricing-header">
-                <h3 className="pricing-name">Starter</h3>
-                <div className="pricing-price">
-                  <span className="price-amount">$29</span>
-                  <span className="price-period">/month</span>
-                </div>
-                <p className="pricing-description">Perfect for small teams</p>
-              </div>
-              <ul className="pricing-features">
-                <li>✓ Up to 5 projects</li>
-                <li>✓ 10 team members</li>
-                <li>✓ Basic time tracking</li>
-                <li>✓ Email support</li>
-              </ul>
-              <Link to="/signup" className="pricing-cta">
-                Get Started
-              </Link>
-            </div>
-
-            <div className="pricing-card featured">
-              <div className="pricing-badge">Most Popular</div>
-              <div className="pricing-header">
-                <h3 className="pricing-name">Professional</h3>
-                <div className="pricing-price">
-                  <span className="price-amount">$79</span>
-                  <span className="price-period">/month</span>
-                </div>
-                <p className="pricing-description">For growing businesses</p>
-              </div>
-              <ul className="pricing-features">
-                <li>✓ Unlimited projects</li>
-                <li>✓ 50 team members</li>
-                <li>✓ Advanced analytics</li>
-                <li>✓ Priority support</li>
-                <li>✓ Custom integrations</li>
-              </ul>
-              <Link to="/signup" className="pricing-cta">
-                Get Started
-              </Link>
-            </div>
-
-            <div className="pricing-card">
-              <div className="pricing-header">
-                <h3 className="pricing-name">Enterprise</h3>
-                <div className="pricing-price">
-                  <span className="price-amount">Custom</span>
-                </div>
-                <p className="pricing-description">For large organizations</p>
-              </div>
-              <ul className="pricing-features">
-                <li>✓ Everything in Professional</li>
-                <li>✓ Unlimited team members</li>
-                <li>✓ Dedicated account manager</li>
-                <li>✓ Custom SLA</li>
-                <li>✓ On-premise deployment</li>
-              </ul>
-              <Link to="/login" className="pricing-cta">
-                Contact Sales
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
       <section className="cta-section">

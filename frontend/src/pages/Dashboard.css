@@ -117,6 +117,129 @@
   color: var(--error);
 }
 
+/* Team Stats Section */
+.team-stats-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.team-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.team-stat-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.team-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-300);
+}
+
+.team-stat-icon {
+  font-size: 2rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-50);
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.team-stat-content {
+  flex: 1;
+}
+
+.team-stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1.2;
+  margin-bottom: var(--spacing-xs);
+}
+
+.team-stat-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  text-transform: capitalize;
+}
+
+/* Projects Search */
+.projects-search-container {
+  margin-bottom: var(--spacing-xl);
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 500px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--gray-400);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.projects-search-input {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 3rem;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 0.9375rem;
+  background: white;
+  color: var(--gray-900);
+  transition: all var(--transition-fast);
+}
+
+.projects-search-input:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.projects-search-input::placeholder {
+  color: var(--gray-400);
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--gray-400);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  z-index: 1;
+}
+
+.search-clear-btn:hover {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
 /* Projects Section */
 .projects-section {
   background: white;
@@ -577,4 +700,187 @@
   .quick-actions-grid {
     grid-template-columns: 1fr;
   }
+
+  .team-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark Theme Styles for Dashboard */
+[data-theme="dark"] .team-stat-card {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .team-stat-value {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .team-stat-label {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .team-stat-icon {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .projects-search-input {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .projects-search-input:focus {
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+[data-theme="dark"] .projects-search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .search-clear-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dashboard-container {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .dashboard-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dashboard-subtitle {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .kpi-card {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kpi-card:hover {
+  border-color: var(--primary-500);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .kpi-card-icon {
+  background: var(--bg-tertiary);
+  color: var(--primary-400);
+}
+
+[data-theme="dark"] .kpi-card-title {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .kpi-card-value {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .projects-section {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .projects-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .filter-btn {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-color: var(--gray-700);
+}
+
+[data-theme="dark"] .filter-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .filter-btn.active {
+  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+  color: white;
+}
+
+[data-theme="dark"] .project-card {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .project-card:hover {
+  border-color: var(--primary-500);
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .project-card-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .project-card-status.planned {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .progress-label {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .progress-value {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .progress-bar {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .project-card-meta {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .empty-state {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .empty-state-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .empty-state-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .loading-text {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .admin-quick-actions {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+}
+
+[data-theme="dark"] .quick-action-card {
+  background: var(--bg-tertiary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .quick-action-card:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-500);
+}
+
+[data-theme="dark"] .quick-action-card h3 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .quick-action-card p {
+  color: var(--text-secondary);
 }
