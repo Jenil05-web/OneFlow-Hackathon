@@ -13,12 +13,12 @@ const Dashboard = () => {
 
   // Mock projects data (replace with API data when available)
   const [projects] = useState([
-    { id: 1, title: 'Project Alpha', status: 'In Progress', progress: 75, dueDate: '2025-12-15', team: 5 },
-    { id: 2, title: 'Project Beta', status: 'Planned', progress: 0, dueDate: '2025-11-20', team: 3 },
-    { id: 3, title: 'Project Gamma', status: 'Completed', progress: 100, dueDate: '2025-10-30', team: 8 },
-    { id: 4, title: 'Project Delta', status: 'In Progress', progress: 45, dueDate: '2025-11-25', team: 6 },
-    { id: 5, title: 'Project Epsilon', status: 'On Hold', progress: 30, dueDate: '2025-12-01', team: 4 },
-    { id: 6, title: 'Project Zeta', status: 'In Progress', progress: 60, dueDate: '2025-11-18', team: 7 },
+    { id: 1, title: 'Project Alpha', status: 'In Progress', progress: 75, dueDate: '2025-12-15', team: 5, image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=500&auto=format&fit=crop' },
+    { id: 2, title: 'Project Beta', status: 'Planned', progress: 0, dueDate: '2025-11-20', team: 3, image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=500&auto=format&fit=crop' },
+    { id: 3, title: 'Project Gamma', status: 'Completed', progress: 100, dueDate: '2025-10-30', team: 8, image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=500&auto=format&fit=crop' },
+    { id: 4, title: 'Project Delta', status: 'In Progress', progress: 45, dueDate: '2025-11-25', team: 6, image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=500&auto=format&fit=crop' },
+    { id: 5, title: 'Project Epsilon', status: 'On Hold', progress: 30, dueDate: '2025-12-01', team: 4, image: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=500&auto=format&fit=crop' },
+    { id: 6, title: 'Project Zeta', status: 'In Progress', progress: 60, dueDate: '2025-11-18', team: 7, image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=500&auto=format&fit=crop' },
   ]);
 
   const filters = ["All", "Planned", "In Progress", "Completed", "On Hold"];
@@ -174,13 +174,23 @@ const Dashboard = () => {
           {filteredProjects.map((project) => (
             <div
               key={project.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all cursor-pointer group"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
             >
-              {/* Project Header */}
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                  {project.title}
-                </h3>
+              {/* Project Image */}
+              <div className="w-full h-48 overflow-hidden">
+                <img 
+                  src={project.image} 
+                  alt={project.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              <div className="p-6">
+                {/* Project Header */}
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                    {project.title}
+                  </h3>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     project.status === "In Progress"
@@ -230,6 +240,7 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
           ))}
         </div>
 
