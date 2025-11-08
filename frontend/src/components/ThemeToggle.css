@@ -9,6 +9,7 @@
   outline: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  display: none !important; /* Hide theme toggle button */
 }
 
 .theme-toggle:focus-visible {

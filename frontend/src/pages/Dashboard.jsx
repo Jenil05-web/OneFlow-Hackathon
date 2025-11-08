@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { projectsAPI as projectAPI, authAPI, tasksAPI, timesheetsAPI } from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import CreateProject from "../components/CreateProject";
+import ProjectOverviewModal from "../components/ProjectOverviewModal";
 import "./Dashboard.css";
 
 const DEFAULT_PROJECT_IMAGE = "https://images.unsplash.com/photo-1606857521015-7f9fcf423740?q=80&w=500&auto=format&fit=crop";
@@ -20,10 +21,13 @@ const Dashboard = () => {
     pendingTimesheets: 0,
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showProjectOverview, setShowProjectOverview] = useState(false);
   const isAdmin = user?.role === "Admin";
   const isManager = user?.role === "Manager";
   const isTeam = user?.role === "Team";
   const canCreateProject = isAdmin || isManager;
+  const canEditProject = isAdmin || isManager;
 
 
   useEffect(() => {
@@ -69,6 +73,14 @@ const Dashboard = () => {
     fetchUserProfile();
     fetchProjects();
   }, []);
+
+  // Refresh projects when user is loaded (especially important for team members)
+  // This ensures team members see their assigned projects after user data is fetched
+  useEffect(() => {
+    if (user && user._id) {
+      fetchProjects();
+    }
+  }, [user?._id, user?.role]);
 
   useEffect(() => {
     if (isTeam && user) {
@@ -305,7 +317,10 @@ const Dashboard = () => {
               <div
                 key={project._id || project.id}
                 className="project-card"
-                onClick={() => navigate(`/project/${project._id || project.id}`)}
+                onClick={() => {
+                  setSelectedProject(project);
+                  setShowProjectOverview(true);
+                }}
               >
                 {/* Project Image */}
                 <div className="project-card-image">
@@ -371,14 +386,19 @@ const Dashboard = () => {
             <div className="empty-state-icon">📭</div>
             <h3 className="empty-state-title">No projects found</h3>
             <p className="empty-state-description">
-              You don't have any projects yet. Create your first project to get started!
+              {isTeam 
+                ? "You haven't been assigned to any projects yet. Contact your manager to get assigned to a project."
+                : "You don't have any projects yet. Create your first project to get started!"
+              }
             </p>
-            <button
-              onClick={() => setShowCreateProject(true)}
-              className="btn btn-primary"
-            >
-              Create Your First Project
-            </button>
+            {canCreateProject && (
+              <button
+                onClick={() => setShowCreateProject(true)}
+                className="btn btn-primary"
+              >
+                Create Your First Project
+              </button>
+            )}
           </div>
         )}
 
@@ -387,6 +407,31 @@ const Dashboard = () => {
           <CreateProject
             onClose={() => setShowCreateProject(false)}
             onSuccess={handleProjectCreated}
+          />
+        )}
+
+        {/* Project Overview Modal */}
+        {showProjectOverview && selectedProject && (
+          <ProjectOverviewModal
+            project={selectedProject}
+            onClose={() => {
+              setShowProjectOverview(false);
+              setSelectedProject(null);
+            }}
+            onEdit={(project) => {
+              // Navigate to edit page or open edit modal
+              navigate(`/project/${project._id || project.id}?edit=true`);
+            }}
+            onDelete={async (project) => {
+              try {
+                await projectAPI.delete(project._id || project.id);
+                await fetchProjects();
+              } catch (error) {
+                console.error('Error deleting project:', error);
+                alert('Failed to delete project');
+              }
+            }}
+            canEdit={canEditProject}
           />
         )}
 

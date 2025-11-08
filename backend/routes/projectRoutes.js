@@ -1,6 +1,7 @@
 // backend/routes/projectRoutes.js
 import express from "express";
 import Project from "../models/Project.js";
+import Task from "../models/Task.js";
 import { ensureAuthenticated, ensureRole } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -57,17 +58,60 @@ router.post("/", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (r
  */
 router.get("/", ensureAuthenticated, async (req, res) => {
   try {
-    let query = {};
+    let projects = [];
 
-    // Team Members only see projects they're assigned to
+    // Team Members see projects they're assigned to OR projects with tasks assigned to them
     if (req.user.role === "Team") {
-      query = { teamMembers: req.user._id };
-    }
+      // First, find projects where user is explicitly in teamMembers or members
+      const assignedProjectIds = await Project.distinct("_id", {
+        $or: [
+          { teamMembers: { $in: [req.user._id] } },
+          { members: { $in: [req.user._id] } }
+        ]
+      });
 
-    const projects = await Project.find(query)
-      .populate("teamMembers", "name email role")
-      .populate("createdBy", "name email role")
-      .sort({ createdAt: -1 });
+      // Second, find projects that have tasks assigned to this user
+      const taskProjectIds = await Task.distinct("project", {
+        assignedTo: req.user._id
+      });
+
+      // Combine and get unique project IDs
+      // Use Set with string representation to ensure uniqueness, then convert back
+      const uniqueProjectIdStrings = [...new Set([
+        ...assignedProjectIds.map(id => id.toString()),
+        ...taskProjectIds.filter(id => id != null).map(id => id.toString())
+      ])];
+
+      // Fetch all projects (both explicitly assigned and those with assigned tasks)
+      if (uniqueProjectIdStrings.length > 0) {
+        // MongoDB can handle string IDs in $in queries, but let's use ObjectIds for consistency
+        const mongoose = (await import("mongoose")).default;
+        const allProjectIds = uniqueProjectIdStrings.map(idStr => {
+          try {
+            return new mongoose.Types.ObjectId(idStr);
+          } catch {
+            return null;
+          }
+        }).filter(id => id != null);
+        
+        if (allProjectIds.length > 0) {
+          projects = await Project.find({
+            _id: { $in: allProjectIds }
+          })
+            .populate("teamMembers", "name email role")
+            .populate("members", "name email role")
+            .populate("createdBy", "name email role")
+            .sort({ createdAt: -1 });
+        }
+      }
+    } else {
+      // Admin and Manager see all projects
+      projects = await Project.find({})
+        .populate("teamMembers", "name email role")
+        .populate("members", "name email role")
+        .populate("createdBy", "name email role")
+        .sort({ createdAt: -1 });
+    }
 
     res.json({
       success: true,
@@ -88,15 +132,32 @@ router.get("/:id", ensureAuthenticated, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id)
       .populate("teamMembers", "name email role")
+      .populate("members", "name email role")
       .populate("createdBy", "name email role");
 
     if (!project) {
       return res.status(404).json({ success: false, message: "Project not found" });
     }
 
-    // Team members can only view if assigned
-    if (req.user.role === "Team" && !project.teamMembers.includes(req.user._id)) {
-      return res.status(403).json({ success: false, message: "Access denied" });
+    // Team members can view if assigned to project OR if they have tasks in this project
+    if (req.user.role === "Team") {
+      const isAssignedToProject = 
+        (project.teamMembers && project.teamMembers.some(m => 
+          (m._id || m).toString() === req.user._id.toString()
+        )) ||
+        (project.members && project.members.some(m => 
+          (m._id || m).toString() === req.user._id.toString()
+        ));
+      
+      // Check if user has tasks in this project
+      const hasTasksInProject = await Task.findOne({ 
+        project: req.params.id, 
+        assignedTo: req.user._id 
+      });
+      
+      if (!isAssignedToProject && !hasTasksInProject) {
+        return res.status(403).json({ success: false, message: "Access denied" });
+      }
     }
 
     res.json({ success: true, project });
@@ -168,8 +229,14 @@ router.put("/:id/assign", ensureAuthenticated, ensureRole(["Admin", "Manager"]),
       return res.status(404).json({ success: false, message: "Project not found" });
     }
 
+    // Update both teamMembers and members for backward compatibility
     project.teamMembers = teamMembers;
+    project.members = teamMembers; // Keep members in sync with teamMembers
     await project.save();
+
+    // Populate before sending response
+    await project.populate("teamMembers", "name email role");
+    await project.populate("members", "name email role");
 
     res.json({
       success: true,

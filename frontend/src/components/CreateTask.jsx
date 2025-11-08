@@ -33,8 +33,10 @@ const CreateTask = ({ projectId: propProjectId, taskId: propTaskId, onClose, onS
   });
   
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageUrl, setImageUrl] = useState(''); // Separate state for URL input
   const [activeTab, setActiveTab] = useState('description'); // 'description', 'timesheets', 'task-info'
   const [loading, setLoading] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
   const [error, setError] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,6 +109,14 @@ const CreateTask = ({ projectId: propProjectId, taskId: propTaskId, onClose, onS
         setProjectId(task.project?._id || task.project || '');
         if (task.image) {
           setImagePreview(task.image);
+          // If it's a URL (not base64), set it in the URL input
+          if (task.image && !task.image.startsWith('data:')) {
+            setImageUrl(task.image);
+          } else {
+            setImageUrl('');
+          }
+        } else {
+          setImageUrl('');
         }
       }
     } catch (err) {
@@ -119,33 +129,140 @@ const CreateTask = ({ projectId: propProjectId, taskId: propTaskId, onClose, onS
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
     
     if (name === 'image') {
-      setImagePreview(value || null);
+      // Handle URL input separately
+      setImageUrl(value);
+      if (value && !value.startsWith('data:')) {
+        // It's a URL, not base64
+        setFormData(prev => ({
+          ...prev,
+          image: value
+        }));
+        setImagePreview(value);
+        // Clear file input if URL is entered
+        const fileInput = document.getElementById('imageFile');
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
     }
+    
     if (name === 'project') {
       setProjectId(value);
       fetchProject();
     }
   };
 
-  const handleImageFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const compressImage = (file, maxWidth = 1920, maxHeight = 1920, quality = 0.8) => {
+    return new Promise((resolve, reject) => {
+      // Validate file size (max 10MB before compression)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        reject(new Error('Image size must be less than 10MB. Please choose a smaller image.'));
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        reject(new Error('Please select a valid image file.'));
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result;
-        setImagePreview(result);
-        setFormData(prev => ({
-          ...prev,
-          image: result
-        }));
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Calculate new dimensions
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth || height > maxHeight) {
+            if (width > height) {
+              if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+              }
+            }
+          }
+
+          // Create canvas and compress
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to base64 with compression
+          const compressedDataUrl = canvas.toDataURL(file.type, quality);
+          
+          // Check if compressed size is still too large (e.g., > 5MB base64)
+          // Base64 is about 33% larger than binary, so 5MB base64 ≈ 3.75MB binary
+          if (compressedDataUrl.length > 5 * 1024 * 1024) {
+            // Try with lower quality
+            const lowerQualityDataUrl = canvas.toDataURL(file.type, 0.6);
+            if (lowerQualityDataUrl.length > 5 * 1024 * 1024) {
+              // If still too large, resize more aggressively
+              const aggressiveWidth = Math.min(width, 1280);
+              const aggressiveHeight = Math.min(height, 1280);
+              canvas.width = aggressiveWidth;
+              canvas.height = aggressiveHeight;
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, aggressiveWidth, aggressiveHeight);
+              resolve(canvas.toDataURL(file.type, 0.6));
+            } else {
+              resolve(lowerQualityDataUrl);
+            }
+          } else {
+            resolve(compressedDataUrl);
+          }
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target.result;
       };
+      reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError('');
+    setImageLoading(true);
+
+    try {
+      const compressedImage = await compressImage(file);
+      setImagePreview(compressedImage);
+      setFormData(prev => ({
+        ...prev,
+        image: compressedImage
+      }));
+      // Clear URL input when file is uploaded
+      setImageUrl('');
+    } catch (err) {
+      console.error('Image compression error:', err);
+      setError(err.message || 'Failed to process image. Please try a different image.');
+      // Reset file input
+      e.target.value = '';
+      setImagePreview(null);
+      setFormData(prev => ({
+        ...prev,
+        image: ''
+      }));
+    } finally {
+      setImageLoading(false);
     }
   };
 
@@ -392,7 +509,12 @@ const CreateTask = ({ projectId: propProjectId, taskId: propTaskId, onClose, onS
               <label htmlFor="image">Image</label>
               <div className="image-upload-section">
                 <div className="image-preview-container">
-                  {imagePreview ? (
+                  {imageLoading ? (
+                    <div className="image-placeholder">
+                      <span>⏳</span>
+                      <span>Processing image...</span>
+                    </div>
+                  ) : imagePreview ? (
                     <div className="image-preview">
                       <img 
                         src={imagePreview} 
@@ -406,7 +528,13 @@ const CreateTask = ({ projectId: propProjectId, taskId: propTaskId, onClose, onS
                         className="remove-image-btn"
                         onClick={() => {
                           setImagePreview(null);
+                          setImageUrl('');
                           setFormData(prev => ({ ...prev, image: '' }));
+                          // Clear file input
+                          const fileInput = document.getElementById('imageFile');
+                          if (fileInput) {
+                            fileInput.value = '';
+                          }
                         }}
                       >
                         ×
@@ -424,19 +552,21 @@ const CreateTask = ({ projectId: propProjectId, taskId: propTaskId, onClose, onS
                     type="url"
                     id="imageUrl"
                     name="image"
-                    value={formData.image}
+                    value={imageUrl}
                     onChange={handleChange}
                     placeholder="Enter image URL"
                     className="image-url-input"
+                    disabled={imageLoading}
                   />
-                  <label htmlFor="imageFile" className="upload-button-label">
+                  <label htmlFor="imageFile" className="upload-button-label" style={{ opacity: imageLoading ? 0.6 : 1, cursor: imageLoading ? 'not-allowed' : 'pointer' }}>
                     <span className="upload-icon">📤</span>
-                    <span>Upload Image</span>
+                    <span>{imageLoading ? 'Processing...' : 'Upload Image'}</span>
                     <input
                       type="file"
                       id="imageFile"
                       accept="image/*"
                       onChange={handleImageFileChange}
+                      disabled={imageLoading}
                       style={{ display: 'none' }}
                     />
                   </label>
