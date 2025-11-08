@@ -1,8 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
+import "./Navbar.css";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const userData = localStorage.getItem("user");
+  const user = userData ? JSON.parse(userData) : null;
+  const isAdmin = user?.role === "Admin";
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -13,8 +17,8 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-brand">
-          🚀 Hackathon Auth
+        <Link to={token ? "/dashboard" : "/"} className="navbar-brand">
+          OneFlow - Plan to Bill in One Place
         </Link>
         <div className="navbar-menu">
           {token ? (
@@ -22,6 +26,11 @@ const Navbar = () => {
               <Link to="/dashboard" className="nav-link">
                 Dashboard
               </Link>
+              {isAdmin && (
+                <Link to="/admin" className="nav-link">
+                  Admin
+                </Link>
+              )}
               <button onClick={handleLogout} className="btn btn-outline">
                 Logout
               </button>

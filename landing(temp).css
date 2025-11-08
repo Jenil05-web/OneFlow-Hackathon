@@ -1,0 +1,345 @@
+/* === GENERAL & RESET === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #ffffff;
+    color: #333; /* Default text color */
+}
+
+/* === NAVBAR (Your code, with fixes) === */
+nav {
+    /* Changed background to white as per design */
+    background: #ffffff; 
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    color: black;
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 2.5rem;
+    align-items: center;
+}
+
+.nav-links a {
+    color: #555; /* Dark grey text for links */
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: #007bff; /* Blue hover color */
+}
+
+/* Primary Button (e.g., "Book a Demo") */
+.btn-primary {
+    background: #007bff; /* Blue color from design */
+    color: white;
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px; /* Slightly rounded corners */
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+/* Secondary/Outline Button (e.g., "Watch Demo") */
+.btn-secondary {
+    background: transparent;
+    color: #333;
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    border: 1px solid #ccc;
+    transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+    background: #f4f4f4;
+    transform: translateY(-2px);
+}
+
+/* === HERO SECTION === */
+.hero {
+    background: #f8faff; /* Light blue/grey background from design */
+    padding: 4rem 2rem;
+}
+
+.hero-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.hero-content {
+    flex: 1; /* Takes up available space */
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    color: #222;
+}
+
+.hero-description {
+    font-size: 1.2rem;
+    color: #555;
+    margin-bottom: 2rem;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.hero-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* === FEATURES SECTION === */
+.features {
+    padding: 4rem 2rem;
+}
+
+.features-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: left; /* Aligned left as per design */
+    margin-bottom: 2.5rem;
+}
+
+.features-grid {
+    display: grid;
+    /* This creates 4 columns, or 2 on smaller screens */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.feature-card {
+    background: #fff;
+    padding: 1.5rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.feature-card:hover {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    margin-bottom: 1rem;
+}
+
+/* Style the SVG icons once you paste them in */
+.feature-icon svg {
+    width: 48px;
+    height: 48px;
+    color: #007bff; /* Blue icon color */
+    background: #e6f2ff; /* Light blue background */
+    padding: 10px;
+    border-radius: 50%;
+}
+
+.feature-card h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.feature-card p {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.5;
+}
+
+
+/* === FOOTER SECTION === */
+.footer {
+    background: #f9f9f9;
+    padding: 4rem 2rem;
+    border-top: 1px solid #eee;
+}
+
+.footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    /* 4-column grid, responsive */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.footer-col h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.footer-col p,
+.footer-col a {
+    color: #555;
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.footer-col a:hover {
+    color: #007bff;
+}
+
+.newsletter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.newsletter-form input {
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: inherit;
+}
+
+.newsletter-form button {
+    background: #333;
+    color: white;
+    padding: 0.7rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.newsletter-form button:hover {
+    background: #000;
+}
+
+.footer-note {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 1rem;
+}
+
+
+/* === MOBILE RESPONSIVE === */
+
+/* Your existing mobile styles */
+@media (max-width: 768px) {
+    .nav-links {
+        position: absolute;
+        top: 70px; /* Adjust based on your navbar height */
+        left: 0;
+        right: 0;
+        /* Updated background */
+        background: #ffffff; 
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        flex-direction: column;
+        gap: 0;
+        padding: 1rem 0;
+        display: none;
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .nav-links li {
+        width: 100%;
+        text-align: center;
+        padding: 1rem 0;
+    }
+
+    .menu-toggle {
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        gap: 5px;
+    }
+    
+    .menu-toggle span {
+        width: 25px;
+        height: 3px;
+        background: black; /* Changed to black to be visible on white bg */
+        border-radius: 3px;
+        transition: all 0.3s;
+    }
+
+    .nav-buttons {
+        display: none; /* Hides "Book a Demo" on mobile */
+    }
+
+    /* Hero section responsive */
+    .hero-container {
+        flex-direction: column-reverse; /* Stacks image on top of content */
+        text-align: center;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .hero-buttons {
+        justify-content: center;
+    }
+
+    /* Footer responsive */
+    .footer-container {
+        text-align: center;
+    }
+}

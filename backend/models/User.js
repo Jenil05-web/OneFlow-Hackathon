@@ -1,68 +1,22 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
-const userSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, 'Please add a name'],
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: [true, 'Please add an email'],
-      unique: true,
-      lowercase: true,
-      trim: true,
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        'Please add a valid email',
-      ],
-    },
-    password: {
-      type: String,
-      required: [true, 'Please add a password'],
-      minlength: 6,
-      select: false,
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    otp: {
-      type: String,
-      select: false,
-    },
-    otpExpiry: {
-      type: Date,
-      select: false,
-    },
-    resetPasswordOTP: {
-      type: String,
-      select: false,
-    },
-    resetPasswordOTPExpiry: {
-      type: Date,
-      select: false,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    next();
-  }
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ["Admin", "Manager", "Team"], default: "Team" },
+  hourlyRate: { type: Number, default: 0 }, // Per hour rate set by admin
+  isActive: { type: Boolean, default: true },
+}, {
+  timestamps: true,
 });
 
-// Match password
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
+// Hash password before save
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
 
-module.exports = mongoose.model('User', userSchema);
+export default mongoose.model("User", userSchema);

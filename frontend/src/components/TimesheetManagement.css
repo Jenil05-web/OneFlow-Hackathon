@@ -1,0 +1,269 @@
+.timesheet-management {
+  width: 100%;
+}
+
+.timesheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+}
+
+.header-left h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: var(--spacing-md);
+}
+
+.timesheet-stats {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.stat-value.billable {
+  color: var(--success);
+}
+
+.stat-value.non-billable {
+  color: var(--gray-600);
+}
+
+.stat-value.cost {
+  color: var(--primary-600);
+}
+
+.timesheet-filters {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+  padding: var(--spacing-md);
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 150px;
+}
+
+.filter-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.filter-group select {
+  padding: 0.5rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.timesheet-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+}
+
+.timesheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.timesheet-table thead {
+  background: var(--gray-50);
+}
+
+.timesheet-table th {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--gray-200);
+  white-space: nowrap;
+}
+
+.timesheet-table td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-200);
+  color: var(--gray-700);
+}
+
+.timesheet-table tbody tr:hover {
+  background: var(--gray-50);
+}
+
+.billable-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.billable-badge.yes {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.billable-badge.no {
+  background: var(--gray-200);
+  color: var(--gray-600);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge.approved {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.status-badge.pending {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.btn-approve,
+.btn-reject,
+.btn-delete {
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition-fast);
+  min-width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-approve {
+  background: var(--success);
+  color: white;
+}
+
+.btn-approve:hover {
+  background: var(--success-dark);
+  transform: scale(1.05);
+}
+
+.btn-reject {
+  background: var(--error);
+  color: white;
+}
+
+.btn-reject:hover {
+  background: var(--error-dark);
+  transform: scale(1.05);
+}
+
+.btn-delete {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.btn-delete:hover {
+  background: var(--error);
+  color: white;
+  transform: scale(1.05);
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--gray-600);
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--primary-600);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto var(--spacing-md);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .timesheet-header {
+    flex-direction: column;
+  }
+
+  .timesheet-stats {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .timesheet-table {
+    font-size: 0.875rem;
+  }
+
+  .timesheet-table th,
+  .timesheet-table td {
+    padding: var(--spacing-sm);
+  }
+}
+
