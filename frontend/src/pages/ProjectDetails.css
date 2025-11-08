@@ -78,8 +78,8 @@
   position: relative;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
   animation: shimmerText 3s ease-in-out infinite;
   letter-spacing: -1px;
   z-index: 1;
@@ -193,7 +193,6 @@
 .project-metadata span i {
   font-size: 1.4rem;
   background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   transition: all 0.3s ease;
 }
