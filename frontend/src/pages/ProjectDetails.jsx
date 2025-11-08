@@ -81,7 +81,10 @@ const ProjectDetails = () => {
     <div className="project-details">
       <div className="project-info">
         <div className="project-header">
-          <h1>{project.title}</h1>
+          <h1>
+            Project Alpha
+            <span className="project-subtitle">Management Dashboard</span>
+          </h1>
           <div className="project-actions">
             <button className="project-action-button btn-secondary">
               <i className="fas fa-user-plus"></i>
