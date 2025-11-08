@@ -1,5 +1,5 @@
 // backend/models/SalesOrder.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 /**
@@ -137,4 +137,4 @@ SalesOrderSchema.post("remove", async function (doc, next) {
   }
 });
 
-module.exports = mongoose.model("SalesOrder", SalesOrderSchema);
+export default mongoose.model("SalesOrder", SalesOrderSchema);

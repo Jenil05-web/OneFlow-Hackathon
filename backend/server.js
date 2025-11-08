@@ -69,17 +69,78 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
     }
 
     // 3️⃣ Register Routes
-    const { default: authRoutes } = await import("./routes/authRoutes.js");
-    const adminRoutes = (await import("./routes/adminRoutes.js")).default || (await import("./routes/adminRoutes.js"));
-    app.use("/api/auth", authRoutes);
-    app.use("/api/admin", adminRoutes);
+    console.log("📦 Registering routes...");
+    
+    // Auth routes
+    try {
+      const { default: authRoutes } = await import("./routes/authRoutes.js");
+      app.use("/api/auth", authRoutes);
+      console.log("✅ Auth routes registered");
+    } catch (err) {
+      console.error("❌ Error loading auth routes:", err.message);
+    }
+
+    // Admin routes
+    try {
+      const adminRoutes = (await import("./routes/adminRoutes.js")).default || (await import("./routes/adminRoutes.js"));
+      app.use("/api/admin", adminRoutes);
+      console.log("✅ Admin routes registered");
+    } catch (err) {
+      console.error("❌ Error loading admin routes:", err.message);
+    }
+
+    // Dashboard routes
+    try {
+      const { default: dashboardRoutes } = await import("./routes/dashboardRoutes.js");
+      app.use("/api/dashboard", dashboardRoutes);
+      console.log("✅ Dashboard routes registered");
+    } catch (err) {
+      console.error("❌ Error loading dashboard routes:", err.message);
+    }
 
     // Project routes
     try {
       const { default: projectRoutes } = await import("./routes/projectRoutes.js");
       app.use("/api/projects", projectRoutes);
+      console.log("✅ Project routes registered");
     } catch (err) {
-      console.log("ℹ️  projectRoutes not found. Create ./routes/projectRoutes.js to enable Project endpoints.");
+      console.error("❌ Error loading project routes:", err.message);
+    }
+
+    // Task routes
+    try {
+      const { default: taskRoutes } = await import("./routes/taskRoutes.js");
+      app.use("/api/tasks", taskRoutes);
+      console.log("✅ Task routes registered");
+    } catch (err) {
+      console.error("❌ Error loading task routes:", err.message);
+    }
+
+    // Timesheet routes
+    try {
+      const { default: timesheetRoutes } = await import("./routes/timesheetRoutes.js");
+      app.use("/api/timesheets", timesheetRoutes);
+      console.log("✅ Timesheet routes registered");
+    } catch (err) {
+      console.error("❌ Error loading timesheet routes:", err.message);
+    }
+
+    // Billing routes
+    try {
+      const { default: billingRoutes } = await import("./routes/billingRoutes.js");
+      app.use("/api/billing", billingRoutes);
+      console.log("✅ Billing routes registered");
+    } catch (err) {
+      console.error("❌ Error loading billing routes:", err.message);
+    }
+
+    // Analytics routes
+    try {
+      const { default: analyticsRoutes } = await import("./routes/analyticsRoutes.js");
+      app.use("/api/analytics", analyticsRoutes);
+      console.log("✅ Analytics routes registered");
+    } catch (err) {
+      console.error("❌ Error loading analytics routes:", err.message);
     }
 
     // Health check route
@@ -90,25 +151,6 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
         version: "1.0.0",
       });
     });
-
-    // Example protected test route (optional)
-    try {
-      const { protect } = await import("./middleware/authMiddleware.js");
-      app.get("/api/dashboard", protect, (req, res) => {
-        res.json({
-          success: true,
-          message: "Welcome to your dashboard!",
-          user: {
-            id: req.user._id,
-            name: req.user.name,
-            email: req.user.email,
-            role: req.user.role,
-          },
-        });
-      });
-    } catch {
-      console.log("ℹ️  authMiddleware not found — dashboard route skipped.");
-    }
 
     // 404 handler
     app.use((req, res) => {

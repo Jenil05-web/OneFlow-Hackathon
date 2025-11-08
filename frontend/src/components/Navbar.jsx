@@ -16,7 +16,7 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-brand">
+        <Link to={token ? "/dashboard" : "/"} className="navbar-brand">
           OneFlow - Plan to Bill in One Place
         </Link>
         <div className="navbar-menu">

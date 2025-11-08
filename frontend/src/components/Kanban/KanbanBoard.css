@@ -1,5 +1,35 @@
 .kanban-board {
   display: flex;
-  justify-content: space-around;
-  padding: 20px;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  overflow-x: auto;
+  min-height: 600px;
+  background: var(--gray-50);
+  border-radius: var(--radius-xl);
+}
+
+.kanban-board::-webkit-scrollbar {
+  height: 8px;
+}
+
+.kanban-board::-webkit-scrollbar-track {
+  background: var(--gray-200);
+  border-radius: var(--radius-full);
+}
+
+.kanban-board::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: var(--radius-full);
+}
+
+.kanban-board::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+}
+
+@media (max-width: 768px) {
+  .kanban-board {
+    flex-direction: column;
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
 }

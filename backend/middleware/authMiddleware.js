@@ -61,4 +61,7 @@ const authorize = (...roles) => {
   };
 };
 
+// Export with aliases for compatibility
 export { protect, authorize };
+export const ensureAuthenticated = protect;
+export const ensureRole = authorize;

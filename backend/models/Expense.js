@@ -1,5 +1,5 @@
 // backend/models/Expense.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 /**
@@ -152,4 +152,4 @@ ExpenseSchema.post("remove", async function (doc, next) {
   }
 });
 
-module.exports = mongoose.model("Expense", ExpenseSchema);
+export default mongoose.model("Expense", ExpenseSchema);

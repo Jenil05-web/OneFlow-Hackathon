@@ -1,5 +1,5 @@
 // backend/models/PurchaseOrder.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 /**
@@ -141,4 +141,4 @@ PurchaseOrderSchema.post("remove", async function (doc, next) {
   }
 });
 
-module.exports = mongoose.model("PurchaseOrder", PurchaseOrderSchema);
+export default mongoose.model("PurchaseOrder", PurchaseOrderSchema);

@@ -38,8 +38,8 @@ router.get("/", ensureAuthenticated, async (req, res) => {
           Project.countDocuments(),
           Task.countDocuments(),
           Timesheet.countDocuments(),
-          Invoice.aggregate([{ $group: { _id: null, sum: { $sum: "$amount" } } }]),
-          VendorBill.aggregate([{ $group: { _id: null, sum: { $sum: "$amount" } } }]),
+          Invoice.aggregate([{ $group: { _id: null, sum: { $sum: "$total" } } }]),
+          VendorBill.aggregate([{ $group: { _id: null, sum: { $sum: "$total" } } }]),
           Expense.aggregate([{ $group: { _id: null, sum: { $sum: "$amount" } } }]),
         ]);
 
@@ -72,7 +72,7 @@ router.get("/", ensureAuthenticated, async (req, res) => {
             {
               $project: {
                 name: 1,
-                revenue: { $sum: "$invoices.amount" },
+                revenue: { $sum: "$invoices.total" },
               },
             },
           ]),
@@ -96,11 +96,11 @@ router.get("/", ensureAuthenticated, async (req, res) => {
         ]),
         Invoice.aggregate([
           { $match: { project: { $in: projectIds } } },
-          { $group: { _id: null, totalRevenue: { $sum: "$amount" } } },
+          { $group: { _id: null, totalRevenue: { $sum: "$total" } } },
         ]),
         VendorBill.aggregate([
           { $match: { project: { $in: projectIds } } },
-          { $group: { _id: null, totalCost: { $sum: "$amount" } } },
+          { $group: { _id: null, totalCost: { $sum: "$total" } } },
         ]),
       ]);
 
@@ -139,7 +139,7 @@ router.get("/", ensureAuthenticated, async (req, res) => {
           { $match: { user: req.user._id } },
           { $group: { _id: null, totalHours: { $sum: "$hours" } } },
         ]),
-        Project.find({ members: req.user._id }).select("name status"),
+        Project.find({ $or: [{ members: req.user._id }, { teamMembers: req.user._id }] }).select("name status"),
       ]);
 
       data = {
@@ -191,11 +191,11 @@ router.get("/stats/project/:id", ensureAuthenticated, ensureRole(["Admin", "Mana
       ]),
       Invoice.aggregate([
         { $match: { project: projectId } },
-        { $group: { _id: null, totalRevenue: { $sum: "$amount" } } },
+        { $group: { _id: null, totalRevenue: { $sum: "$total" } } },
       ]),
       VendorBill.aggregate([
         { $match: { project: projectId } },
-        { $group: { _id: null, totalCost: { $sum: "$amount" } } },
+        { $group: { _id: null, totalCost: { $sum: "$total" } } },
       ]),
       Expense.aggregate([
         { $match: { project: projectId } },

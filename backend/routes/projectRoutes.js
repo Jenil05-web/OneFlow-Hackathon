@@ -18,19 +18,21 @@ const router = express.Router();
  */
 router.post("/", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
   try {
-    const { name, description, client, startDate, endDate, budget } = req.body;
+    const { name, description, client, startDate, endDate, budget, manager, teamMembers } = req.body;
 
-    if (!name || !client) {
-      return res.status(400).json({ success: false, message: "Project name and client are required" });
+    if (!name) {
+      return res.status(400).json({ success: false, message: "Project name is required" });
     }
 
     const project = await Project.create({
       name,
       description,
-      client,
+      client: client || "",
       startDate,
       endDate,
-      budget,
+      budget: budget || 0,
+      manager: manager || req.user._id, // Default to current user if not specified
+      teamMembers: teamMembers || [],
       createdBy: req.user._id,
     });
 

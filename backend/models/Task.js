@@ -1,5 +1,5 @@
 // backend/models/Task.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const CommentSchema = new Schema(
@@ -28,15 +28,22 @@ const TaskSchema = new Schema(
 
     // Relationships
     project: { type: Schema.Types.ObjectId, ref: "Project", required: true },
-    assignee: { type: Schema.Types.ObjectId, ref: "User", required: false },
+    assignedTo: { type: Schema.Types.ObjectId, ref: "User", required: false }, // Changed from 'assignee' to match routes
+    assignee: { type: Schema.Types.ObjectId, ref: "User", required: false }, // Keep for backward compatibility
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
 
-    // State machine
+    // Status - using route values
+    status: {
+      type: String,
+      enum: ["To Do", "In Progress", "Review", "Completed", "Blocked"],
+      default: "To Do",
+      index: true,
+    },
+    // Keep 'state' for backward compatibility, but sync with status
     state: {
       type: String,
       enum: ["New", "In Progress", "Blocked", "Done"],
       default: "New",
-      index: true,
     },
 
     // Priority
@@ -76,6 +83,43 @@ const TaskSchema = new Schema(
 );
 
 /**
+ * Pre-save hook: Sync assignedTo and assignee, status and state
+ */
+TaskSchema.pre("save", function (next) {
+  // Sync assignee with assignedTo
+  if (this.assignedTo) {
+    this.assignee = this.assignedTo;
+  } else if (this.assignee) {
+    this.assignedTo = this.assignee;
+  }
+
+  // Sync state with status (map route values to requirement values)
+  const statusToStateMap = {
+    "To Do": "New",
+    "In Progress": "In Progress",
+    "Review": "In Progress", // Review is intermediate state
+    "Completed": "Done",
+    "Blocked": "Blocked",
+  };
+  if (this.status && statusToStateMap[this.status]) {
+    this.state = statusToStateMap[this.status];
+  }
+
+  // Sync state to status (reverse mapping)
+  const stateToStatusMap = {
+    New: "To Do",
+    "In Progress": "In Progress",
+    Blocked: "Blocked",
+    Done: "Completed",
+  };
+  if (this.state && stateToStatusMap[this.state] && !this.status) {
+    this.status = stateToStatusMap[this.state];
+  }
+
+  next();
+});
+
+/**
  * Instance method: add comment
  */
 TaskSchema.methods.addComment = async function (userId, text) {
@@ -106,12 +150,12 @@ TaskSchema.methods.setProgress = function (value) {
 };
 
 /**
- * Virtual: isOverdue — true if dueDate passed and not Done
+ * Virtual: isOverdue — true if dueDate passed and not Completed
  */
 TaskSchema.virtual("isOverdue").get(function () {
   if (!this.dueDate) return false;
   const now = new Date();
-  return this.state !== "Done" && now > this.dueDate;
+  return this.status !== "Completed" && this.status !== "Done" && now > this.dueDate;
 });
 
 /**
@@ -149,7 +193,19 @@ TaskSchema.statics.recalculateTimeLogged = async function (taskId) {
 };
 
 /**
- * Method: change state safely (with validations)
+ * Method: change status safely (with validations)
+ */
+TaskSchema.methods.changeStatus = function (newStatus) {
+  const allowedStatuses = ["To Do", "In Progress", "Review", "Completed", "Blocked"];
+  if (!allowedStatuses.includes(newStatus)) {
+    throw new Error("Invalid status transition");
+  }
+  this.status = newStatus;
+  return this.status;
+};
+
+/**
+ * Method: change state safely (with validations) - for backward compatibility
  */
 TaskSchema.methods.changeState = function (newState) {
   const allowedStates = ["New", "In Progress", "Blocked", "Done"];
@@ -157,7 +213,17 @@ TaskSchema.methods.changeState = function (newState) {
     throw new Error("Invalid state transition");
   }
   this.state = newState;
+  // Sync status
+  const stateToStatusMap = {
+    New: "To Do",
+    "In Progress": "In Progress",
+    Blocked: "Blocked",
+    Done: "Completed",
+  };
+  if (stateToStatusMap[newState]) {
+    this.status = stateToStatusMap[newState];
+  }
   return this.state;
 };
 
-module.exports = mongoose.model("Task", TaskSchema);
+export default mongoose.model("Task", TaskSchema);

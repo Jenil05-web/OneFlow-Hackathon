@@ -1,5 +1,5 @@
 // backend/models/Invoice.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 /**
@@ -161,4 +161,4 @@ InvoiceSchema.post("remove", async function (doc, next) {
   }
 });
 
-module.exports = mongoose.model("Invoice", InvoiceSchema);
+export default mongoose.model("Invoice", InvoiceSchema);

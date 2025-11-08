@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { projectsAPI } from '../services/api';
 import './CreateProject.css';
 
 const CreateProject = ({ onClose, onSuccess }) => {
@@ -6,6 +7,7 @@ const CreateProject = ({ onClose, onSuccess }) => {
     name: '',
     code: '',
     description: '',
+    client: '',
     status: 'Planned',
     startDate: '',
     endDate: '',
@@ -49,36 +51,46 @@ const CreateProject = ({ onClose, onSuccess }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(formData)
-      });
+      // Prepare data for API
+      const projectData = {
+        name: formData.name,
+        code: formData.code || undefined,
+        description: formData.description || '',
+        client: formData.client || '',
+        status: formData.status,
+        startDate: formData.startDate || undefined,
+        endDate: formData.endDate || undefined,
+        budget: formData.budget ? parseFloat(formData.budget) : 0,
+        tags: formData.tags.length > 0 ? formData.tags : undefined,
+      };
 
-      const data = await response.json();
+      const response = await projectsAPI.create(projectData);
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create project');
+      if (response.data.success) {
+        onSuccess(response.data.project);
+        onClose();
+      } else {
+        throw new Error(response.data.message || 'Failed to create project');
       }
-
-      onSuccess(data.project);
-      onClose();
     } catch (err) {
-      setError(err.message);
+      console.error('Create project error:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to create project');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="create-project-overlay">
-      <div className="create-project-modal">
+    <div className="create-project-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="create-project-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Create New Project</h2>
-          <button className="close-button" onClick={onClose}>×</button>
+          <button className="close-button" onClick={onClose} aria-label="Close modal">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -106,6 +118,18 @@ const CreateProject = ({ onClose, onSuccess }) => {
               value={formData.code}
               onChange={handleChange}
               placeholder="Enter project code (optional)"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="client">Client Name</label>
+            <input
+              type="text"
+              id="client"
+              name="client"
+              value={formData.client}
+              onChange={handleChange}
+              placeholder="Enter client name (optional)"
             />
           </div>
 
@@ -147,6 +171,7 @@ const CreateProject = ({ onClose, onSuccess }) => {
                 onChange={handleChange}
                 min="0"
                 step="0.01"
+                placeholder="0.00"
               />
             </div>
           </div>

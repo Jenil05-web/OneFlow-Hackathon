@@ -1,5 +1,5 @@
 // backend/models/Timesheet.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 /**
@@ -22,7 +22,7 @@ const TimesheetSchema = new Schema(
     // Billing / cost tracking
     billable: { type: Boolean, default: true },
     hourlyRate: { type: Number, default: 0 }, // store snapshot at entry time
-    cost: { type: Number, default: 0 },       // computed: hours * hourlyRate
+    cost: { type: Number, default: 0 }, // computed: hours * hourlyRate
 
     // Approvals
     approved: { type: Boolean, default: false },
@@ -118,4 +118,4 @@ TimesheetSchema.virtual("week").get(function () {
   return Math.ceil((dayOfYear + firstJan.getDay() + 1) / 7);
 });
 
-module.exports = mongoose.model("Timesheet", TimesheetSchema);
+export default mongoose.model("Timesheet", TimesheetSchema);

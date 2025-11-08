@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authAPI } from "../services/api";
-// In Signup.jsx, add this import at the top
-import './Signup.css';
+import "./Signup.css";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -45,15 +44,12 @@ const Signup = () => {
         password: formData.password,
       });
 
-      setSuccess(response.data.message);
-      
-      // Store the token and user data
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setSuccess(response.data.message || "Account created successfully!");
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // Show success message briefly before redirect
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate("/dashboard");
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
@@ -64,21 +60,18 @@ const Signup = () => {
 
   return (
     <div className="signup-page">
-      <div className="signup-container">
+      <div className="signup-card">
         <div className="signup-header">
-          <h2>Create Account</h2>
-          <p>Sign up to get started</p>
+          <h2>Create an Account</h2>
+          <p>Fill in your details to get started</p>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
-
         {success && <div className="alert alert-success">{success}</div>}
 
-        <form onSubmit={handleSubmit} className="form-container">
+        <form onSubmit={handleSubmit} className="signup-form">
           <div className="form-group">
-            <label htmlFor="name" className="form-label">
-              Full Name
-            </label>
+            <label htmlFor="name">Full Name</label>
             <input
               id="name"
               type="text"
@@ -86,15 +79,13 @@ const Signup = () => {
               value={formData.name}
               onChange={handleChange}
               required
-              className="form-input"
               placeholder="Enter your full name"
+              autoComplete="name"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="email" className="form-label">
-              Email Address
-            </label>
+            <label htmlFor="email">Email Address</label>
             <input
               id="email"
               type="email"
@@ -102,15 +93,13 @@ const Signup = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="form-input"
-              placeholder="Enter your email"
+              placeholder="name@company.com"
+              autoComplete="email"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
+            <label htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
@@ -118,15 +107,13 @@ const Signup = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              className="form-input"
               placeholder="Create a password"
+              autoComplete="new-password"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword" className="form-label">
-              Confirm Password
-            </label>
+            <label htmlFor="confirmPassword">Confirm Password</label>
             <input
               id="confirmPassword"
               type="password"
@@ -134,28 +121,19 @@ const Signup = () => {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              className="form-input"
               placeholder="Confirm your password"
+              autoComplete="new-password"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`btn btn-primary btn-block ${
-              loading ? "btn-loading" : ""
-            }`}
-          >
-            {loading ? "Creating Account..." : "Sign Up"}
+          <button type="submit" className="btn-signup" disabled={loading || success}>
+            {loading ? <span className="loading-spinner"></span> : "Create Account"}
           </button>
         </form>
 
         <div className="signup-footer">
           <p>
-            Already have an account?{" "}
-            <Link to="/login" className="link-primary">
-              Login
-            </Link>
+            Already have an account? <Link to="/login">Sign In</Link>
           </p>
         </div>
       </div>

@@ -1,23 +1,90 @@
 .kanban-column {
-  background-color: #f4f5f7;
-  border-radius: 8px;
-  width: 300px;
-  padding: 15px;
-  margin: 0 10px;
+  min-width: 300px;
+  max-width: 350px;
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
   display: flex;
   flex-direction: column;
+  height: fit-content;
+  max-height: 80vh;
+  transition: all var(--transition-base);
+}
+
+.kanban-column:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-200);
 }
 
 .column-title {
-  font-size: 1.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+}
+
+.task-count {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
   font-weight: 600;
-  margin-bottom: 15px;
-  padding: 0 5px;
+  margin-left: var(--spacing-sm);
 }
 
 .task-list {
-  background-color: #f4f5f7;
-  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  overflow-y: auto;
+  flex: 1;
+  padding: var(--spacing-xs);
   min-height: 100px;
-  padding: 5px;
+}
+
+.task-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.task-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.task-list::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: var(--radius-full);
+}
+
+.task-list::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
+}
+
+.empty-column {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--gray-400);
+  font-size: 0.875rem;
+  font-style: italic;
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-md);
+  background: var(--gray-50);
+}
+
+@media (max-width: 768px) {
+  .kanban-column {
+    min-width: 100%;
+    max-width: 100%;
+    max-height: none;
+  }
 }

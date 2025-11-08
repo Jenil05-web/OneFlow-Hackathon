@@ -1,98 +1,128 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { projectsAPI, tasksAPI } from '../services/api';
 import KanbanBoard from '../components/Kanban/KanbanBoard';
 import './ProjectDetails.css';
 
 const ProjectDetails = () => {
   const { projectId } = useParams();
+  const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const mockProject = {
-        id: projectId,
-        title: "Project Alpha",
-        description: "A comprehensive project management system with Kanban board functionality. This project aims to streamline task management and improve team collaboration through an intuitive interface.",
-        status: "In Progress",
-        progress: 60,
-        dueDate: "2023-12-31",
-        team: [
-          { id: 1, name: "John Doe", avatar: "https://i.pravatar.cc/150?img=1" },
-          { id: 2, name: "Jane Smith", avatar: "https://i.pravatar.cc/150?img=2" },
-          { id: 3, name: "Mike Johnson", avatar: "https://i.pravatar.cc/150?img=3" }
-        ]
-      };
-
-      const mockTasks = [
-        {
-          id: 1,
-          title: "Design System Implementation",
-          description: "Create and implement a comprehensive design system including color palette, typography, and component library",
-          status: "Done",
-          assignee: { name: "John Doe", avatar: "https://i.pravatar.cc/150?img=1" },
-          priority: "high",
-          dueDate: "2023-11-15",
-          tags: ["design", "ui/ux"]
-        },
-        {
-          id: 2,
-          title: "Backend API Development",
-          description: "Develop RESTful API endpoints for user authentication, task management, and project analytics",
-          status: "In Progress",
-          assignee: { name: "Jane Smith", avatar: "https://i.pravatar.cc/150?img=2" },
-          priority: "medium",
-          dueDate: "2023-11-20",
-          tags: ["backend", "api"]
-        },
-        {
-          id: 3,
-          title: "Test Suite Implementation",
-          description: "Write comprehensive unit tests and integration tests for all major components",
-          status: "To Do",
-          assignee: { name: "Mike Johnson", avatar: "https://i.pravatar.cc/150?img=3" },
-          priority: "low",
-          dueDate: "2023-11-25",
-          tags: ["testing", "qa"]
-        },
-        {
-          id: 4,
-          title: "Performance Optimization",
-          description: "Optimize application performance, including load times, database queries, and frontend rendering",
-          status: "To Do",
-          assignee: { name: "John Doe", avatar: "https://i.pravatar.cc/150?img=1" },
-          priority: "medium",
-          dueDate: "2023-11-30",
-          tags: ["optimization", "performance"]
-        }
-      ];
-
-      setProject(mockProject);
-      setTasks(mockTasks);
-      setLoading(false);
-    }, 500);
+    fetchProjectData();
+    fetchTasks();
   }, [projectId]);
+
+  const fetchProjectData = async () => {
+    try {
+      const response = await projectsAPI.getById(projectId);
+      if (response.data.success) {
+        setProject(response.data.project);
+      } else {
+        setError('Failed to load project');
+      }
+    } catch (err) {
+      console.error('Error fetching project:', err);
+      setError(err.response?.data?.message || 'Failed to load project');
+      if (err.response?.status === 404) {
+        navigate('/dashboard');
+      }
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      const response = await tasksAPI.getByProject(projectId);
+      if (response.data.success) {
+        // Map tasks to match KanbanBoard expected format
+        const mappedTasks = (response.data.tasks || []).map(task => ({
+          id: task._id || task.id,
+          title: task.title,
+          description: task.description || '',
+          status: task.status || 'To Do',
+          assignee: task.assignedTo ? {
+            name: task.assignedTo.name || 'Unassigned',
+            avatar: task.assignedTo.avatar || `https://ui-avatars.com/api/?name=${task.assignedTo.name || 'User'}&background=random`
+          } : null,
+          priority: task.priority?.toLowerCase() || 'medium',
+          dueDate: task.dueDate || null,
+          tags: task.tags || [],
+          progress: task.progress || 0,
+          timeLogged: task.timeLogged || 0,
+          estimatedHours: task.estimatedHours || 0,
+        }));
+        setTasks(mappedTasks);
+      }
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+      setError(err.response?.data?.message || 'Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTaskStatusUpdate = async (taskId, newStatus) => {
+    try {
+      await tasksAPI.updateStatus(taskId, newStatus);
+      // Refresh tasks
+      fetchTasks();
+    } catch (err) {
+      console.error('Error updating task status:', err);
+      alert('Failed to update task status');
+    }
+  };
 
   if (loading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <div className="loading-text">Loading...</div>
+        <div className="loading-text">Loading project...</div>
       </div>
     );
+  }
+
+  if (error && !project) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">{error}</div>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return null;
   }
 
   return (
     <div className="project-details">
       <div className="project-info">
         <div className="project-header">
-          <h1>
-            {project.title}
-            <span className="project-subtitle">Management Dashboard</span>
-          </h1>
+          <div>
+            <h1>
+              {project.name}
+              <span className="project-subtitle">Management Dashboard</span>
+            </h1>
+          </div>
           <div className="project-actions">
+            <button 
+              className="project-action-button btn-secondary"
+              onClick={() => navigate('/dashboard')}
+            >
+              <i className="fas fa-arrow-left"></i>
+              Back to Dashboard
+            </button>
             <button className="project-action-button btn-secondary">
               <i className="fas fa-user-plus"></i>
               Add Member
@@ -103,7 +133,7 @@ const ProjectDetails = () => {
             </button>
           </div>
         </div>
-        <p>{project.description}</p>
+        <p>{project.description || 'No description provided'}</p>
         <div className="project-metadata">
           <span>
             <i className="fas fa-chart-line"></i>
@@ -111,20 +141,39 @@ const ProjectDetails = () => {
           </span>
           <span>
             <i className="fas fa-tasks"></i>
-            Progress: {project.progress}%
+            Progress: {project.progress || 0}%
           </span>
           <span>
             <i className="fas fa-calendar"></i>
-            Due: {new Date(project.dueDate).toLocaleDateString()}
+            Due: {project.endDate 
+              ? new Date(project.endDate).toLocaleDateString()
+              : 'No deadline'
+            }
           </span>
           <span>
             <i className="fas fa-users"></i>
-            Team: {project.team.length} members
+            Team: {project.teamMembers?.length || project.members?.length || 0} members
           </span>
+          {project.budget > 0 && (
+            <span>
+              <i className="fas fa-dollar-sign"></i>
+              Budget: ${project.budget.toLocaleString()}
+            </span>
+          )}
+          {project.revenue !== undefined && (
+            <span>
+              <i className="fas fa-chart-line"></i>
+              Revenue: ${project.revenue?.toLocaleString() || 0}
+            </span>
+          )}
         </div>
       </div>
       <div className="kanban-container">
-        <KanbanBoard tasks={tasks} />
+        <KanbanBoard 
+          tasks={tasks} 
+          onTaskStatusUpdate={handleTaskStatusUpdate}
+          projectId={projectId}
+        />
       </div>
     </div>
   );

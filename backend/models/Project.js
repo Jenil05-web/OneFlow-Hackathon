@@ -1,5 +1,5 @@
 // backend/models/Project.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const ProjectSchema = new Schema(
@@ -8,10 +8,13 @@ const ProjectSchema = new Schema(
     name: { type: String, required: true, trim: true },
     code: { type: String, trim: true, index: true }, // optional short code/identifier
     description: { type: String, default: "" },
+    client: { type: String, trim: true }, // Client/customer name
 
     // Ownership
     manager: { type: Schema.Types.ObjectId, ref: "User", required: false },
-    members: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    teamMembers: [{ type: Schema.Types.ObjectId, ref: "User" }], // Changed from 'members' to match routes
+    members: [{ type: Schema.Types.ObjectId, ref: "User" }], // Keep for backward compatibility
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" }, // User who created the project
 
     // Status & dates
     status: {
@@ -24,10 +27,10 @@ const ProjectSchema = new Schema(
     endDate: { type: Date },
 
     // Financials
-    budget: { type: Number, default: 0 },   // planned budget
-    revenue: { type: Number, default: 0 },  // aggregated from Invoices / SO lines
-    cost: { type: Number, default: 0 },     // aggregated from VendorBills + Timesheets + Expenses
-    profit: { type: Number, default: 0 },   // revenue - cost (kept in sync)
+    budget: { type: Number, default: 0 }, // planned budget
+    revenue: { type: Number, default: 0 }, // aggregated from Invoices / SO lines
+    cost: { type: Number, default: 0 }, // aggregated from VendorBills + Timesheets + Expenses
+    profit: { type: Number, default: 0 }, // revenue - cost (kept in sync)
 
     // Progress / utilization
     progress: { type: Number, default: 0, min: 0, max: 100 }, // percent
@@ -43,7 +46,7 @@ const ProjectSchema = new Schema(
 
     // Optional metadata
     tags: [{ type: String }],
-    archived: { type: Boolean, default: false }
+    archived: { type: Boolean, default: false },
   },
   {
     timestamps: true,
@@ -51,6 +54,19 @@ const ProjectSchema = new Schema(
     toObject: { virtuals: true },
   }
 );
+
+/**
+ * Pre-save hook: Sync teamMembers and members arrays
+ */
+ProjectSchema.pre("save", function (next) {
+  // Sync members with teamMembers (keep both in sync)
+  if (this.teamMembers && this.teamMembers.length > 0) {
+    this.members = this.teamMembers;
+  } else if (this.members && this.members.length > 0) {
+    this.teamMembers = this.members;
+  }
+  next();
+});
 
 /**
  * Instance method: recalculate financial fields (profit)
@@ -108,7 +124,12 @@ ProjectSchema.pre("save", function (next) {
  * const project = await Project.findById(projectId);
  * await project.recomputeFromLinkedDocuments(invoiceSum, vendorBillSum, timesheetCostSum, expenseSum);
  */
-ProjectSchema.methods.recomputeFromLinkedDocuments = async function ({ invoiceTotal = 0, vendorBillTotal = 0, timesheetCost = 0, expenseTotal = 0 } = {}) {
+ProjectSchema.methods.recomputeFromLinkedDocuments = async function ({
+  invoiceTotal = 0,
+  vendorBillTotal = 0,
+  timesheetCost = 0,
+  expenseTotal = 0,
+} = {}) {
   // Invoice/revenue
   this.revenue = Number(invoiceTotal || 0);
 
@@ -124,4 +145,4 @@ ProjectSchema.methods.recomputeFromLinkedDocuments = async function ({ invoiceTo
   return this.save();
 };
 
-module.exports = mongoose.model("Project", ProjectSchema);
+export default mongoose.model("Project", ProjectSchema);
