@@ -27,7 +27,7 @@ const Dashboard = () => {
   const isManager = user?.role === "Manager";
   const isTeam = user?.role === "Team";
   const canCreateProject = isAdmin || isManager;
-  const canEditProject = isAdmin || isManager;
+  const canEditProject = isAdmin; // Only Admin can edit projects
 
 
   useEffect(() => {

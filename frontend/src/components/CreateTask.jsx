@@ -40,19 +40,40 @@ const CreateTask = ({ projectId: propProjectId, taskId: propTaskId, onClose, onS
   const [error, setError] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Get user role
+  const userData = localStorage.getItem('user');
+  const user = userData ? JSON.parse(userData) : null;
+  const isAdmin = user?.role === 'Admin';
+  const isManagerOrAdmin = user?.role === 'Admin' || user?.role === 'Manager';
 
   useEffect(() => {
+    // Check if user can edit in edit mode
+    if (isEditMode && !isAdmin) {
+      setError('Only administrators can edit tasks.');
+      // Redirect after a delay
+      const timer = setTimeout(() => {
+        if (projectId) {
+          navigate(`/project/${projectId}`);
+        } else {
+          navigate('/dashboard');
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+
     fetchProjects();
     fetchUsers();
     if (projectId) {
       fetchProject();
     }
-    if (isEditMode) {
+    if (isEditMode && isAdmin) {
       fetchTask();
     } else if (projectId) {
       setFormData(prev => ({ ...prev, project: projectId }));
     }
-  }, [projectId, taskId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, taskId, isEditMode, isAdmin, navigate]);
 
   const fetchProject = async () => {
     if (!projectId) return;
@@ -293,6 +314,17 @@ const CreateTask = ({ projectId: propProjectId, taskId: propTaskId, onClose, onS
       return;
     }
 
+    // Only Admin can update tasks, Managers and Admins can create
+    if (isEditMode && !isAdmin) {
+      setError('Only administrators can update tasks.');
+      return;
+    }
+
+    if (!isEditMode && !isManagerOrAdmin) {
+      setError('Only administrators and managers can create tasks.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -310,8 +342,15 @@ const CreateTask = ({ projectId: propProjectId, taskId: propTaskId, onClose, onS
 
       let response;
       if (isEditMode) {
+        // Only Admin can update (double check)
+        if (!isAdmin) {
+          setError('Only administrators can update tasks.');
+          setLoading(false);
+          return;
+        }
         response = await tasksAPI.update(taskId, taskData);
       } else {
+        // Managers and Admins can create
         response = await tasksAPI.create(taskData);
       }
 

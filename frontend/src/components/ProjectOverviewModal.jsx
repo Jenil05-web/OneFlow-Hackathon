@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tasksAPI, projectsAPI } from '../services/api';
 import './ProjectOverviewModal.css';
@@ -8,6 +8,11 @@ const ProjectOverviewModal = ({ project, onClose, onEdit, onDelete, canEdit }) =
   const [taskCount, setTaskCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+  const justOpenedRef = useRef(false);
+  const buttonClickedRef = useRef(false);
+  const openingClickTimeRef = useRef(0);
 
   useEffect(() => {
     if (project) {
@@ -16,18 +21,57 @@ const ProjectOverviewModal = ({ project, onClose, onEdit, onDelete, canEdit }) =
   }, [project]);
 
   useEffect(() => {
+    if (!showMenu) {
+      justOpenedRef.current = false;
+      buttonClickedRef.current = false;
+      return;
+    }
+
     const handleClickOutside = (event) => {
-      if (showMenu && !event.target.closest('.project-overview-menu')) {
+      // Ignore clicks that happened within 500ms of opening (the opening click)
+      const timeSinceOpening = Date.now() - openingClickTimeRef.current;
+      if (timeSinceOpening < 500) {
+        return;
+      }
+
+      // Ignore if button was just clicked
+      if (buttonClickedRef.current) {
+        buttonClickedRef.current = false;
+        return;
+      }
+
+      // Ignore clicks that happen immediately after opening
+      if (justOpenedRef.current) {
+        return;
+      }
+
+      // Check if click is outside the menu container
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowMenu(false);
       }
     };
 
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
+    // Set flag that menu just opened
+    justOpenedRef.current = true;
+    
+    // Clear the flag after a delay
+    const clearFlagTimer = setTimeout(() => {
+      justOpenedRef.current = false;
+    }, 200);
+
+    // Add listener after a delay to ensure the opening click has been processed
+    // Don't use capture phase so button's onClick can set the flag first
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
+    
+    return () => {
+      clearTimeout(clearFlagTimer);
+      clearTimeout(timer);
+      document.removeEventListener('click', handleClickOutside);
+      justOpenedRef.current = false;
+      buttonClickedRef.current = false;
+    };
   }, [showMenu]);
 
   const fetchTaskCount = async () => {
@@ -51,20 +95,28 @@ const ProjectOverviewModal = ({ project, onClose, onEdit, onDelete, canEdit }) =
 
   const handleEdit = () => {
     setShowMenu(false);
-    if (onEdit) {
-      onEdit(project);
-    }
     onClose();
+    // Small delay to allow modal to close before navigation
+    setTimeout(() => {
+      if (onEdit) {
+        onEdit(project);
+      } else {
+        // Fallback navigation
+        navigate(`/project/${project._id || project.id}?edit=true`);
+      }
+    }, 100);
   };
 
   const handleDelete = () => {
     setShowMenu(false);
-    if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
+    const confirmed = window.confirm(`Are you sure you want to delete project "${project.name}"? This action cannot be undone.`);
+    if (confirmed) {
       if (onDelete) {
         onDelete(project);
       }
+      onClose();
     }
-    onClose();
+    // If cancelled, don't close the menu - it will be handled by the click outside handler
   };
 
   const formatDate = (dateString) => {
@@ -83,9 +135,24 @@ const ProjectOverviewModal = ({ project, onClose, onEdit, onDelete, canEdit }) =
 
   if (!project) return null;
 
+  const handleModalClick = (e) => {
+    // Don't close modal when clicking inside, but allow menu clicks
+    e.stopPropagation();
+  };
+
+  const handleOverlayClick = (e) => {
+    // Only close if clicking directly on overlay, not on modal content
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="project-overview-overlay" onClick={onClose}>
-      <div className="project-overview-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="project-overview-overlay" onClick={handleOverlayClick}>
+      <div 
+        className="project-overview-modal" 
+        onClick={handleModalClick}
+      >
         <div className="project-overview-card">
           {/* Header with Tags and Menu */}
           <div className="project-overview-header">
@@ -107,11 +174,26 @@ const ProjectOverviewModal = ({ project, onClose, onEdit, onDelete, canEdit }) =
               )}
             </div>
             {canEdit && (
-              <div className="project-overview-menu">
+              <div className="project-overview-menu" ref={menuRef}>
                 <button 
+                  ref={buttonRef}
+                  type="button"
                   className="project-overview-menu-btn"
-                  onClick={() => setShowMenu(!showMenu)}
+                  onClick={(e) => {
+                    // Record the time of the click
+                    openingClickTimeRef.current = Date.now();
+                    // Mark that button was clicked first
+                    buttonClickedRef.current = true;
+                    e.stopPropagation();
+                    const newValue = !showMenu;
+                    setShowMenu(newValue);
+                    // Clear the flag after a delay to allow the click event to be processed
+                    setTimeout(() => {
+                      buttonClickedRef.current = false;
+                    }, 500);
+                  }}
                   aria-label="More options"
+                  aria-expanded={showMenu}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="5" r="1"/>
@@ -120,12 +202,36 @@ const ProjectOverviewModal = ({ project, onClose, onEdit, onDelete, canEdit }) =
                   </svg>
                 </button>
                 {showMenu && (
-                  <div className="project-overview-menu-dropdown">
-                    <button onClick={handleEdit} className="menu-item">
+                  <div 
+                    className="project-overview-menu-dropdown"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <button 
+                      type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleEdit();
+                    }}
+                      className="menu-item"
+                    >
                       Edit
                     </button>
                     <div className="menu-divider"></div>
-                    <button onClick={handleDelete} className="menu-item menu-item-danger">
+                    <button 
+                      type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleDelete();
+                    }}
+                      className="menu-item menu-item-danger"
+                    >
                       Delete
                     </button>
                   </div>

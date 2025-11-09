@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { billingAPI } from '../services/api';
+import { billingAPI, projectsAPI, adminAPI } from '../services/api';
 import CreateSalesOrder from './documents/CreateSalesOrder';
 import CreatePurchaseOrder from './documents/CreatePurchaseOrder';
 import CreateInvoice from './documents/CreateInvoice';
@@ -17,12 +17,17 @@ const ProjectSettings = ({ projectId, project }) => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(null); // 'sales-order', 'purchase-order', 'invoice', 'vendor-bill', 'expense'
+  const [users, setUsers] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [assigningMembers, setAssigningMembers] = useState(false);
 
   useEffect(() => {
     if (projectId) {
       fetchAllDocuments();
+      fetchUsers();
+      fetchProjectTeamMembers();
     }
-  }, [projectId]);
+  }, [projectId, project]);
 
   const fetchAllDocuments = async () => {
     setLoading(true);
@@ -62,8 +67,57 @@ const ProjectSettings = ({ projectId, project }) => {
     .reduce((sum, item) => sum + (item.total || item.amount || 0), 0);
   const profit = totalRevenue - totalCost;
 
+  const fetchUsers = async () => {
+    try {
+      const response = await adminAPI.getUsers();
+      if (response.data.success) {
+        setUsers(response.data.users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchProjectTeamMembers = () => {
+    if (project) {
+      const members = project.teamMembers || project.members || [];
+      setTeamMembers(members.map(m => (m._id || m).toString()));
+    }
+  };
+
+  const handleTeamMemberChange = async (userId, isChecked) => {
+    let newTeamMembers;
+    if (isChecked) {
+      newTeamMembers = [...teamMembers, userId];
+    } else {
+      newTeamMembers = teamMembers.filter(id => id !== userId);
+    }
+
+    // Optimistically update UI
+    setTeamMembers(newTeamMembers);
+    setAssigningMembers(true);
+
+    try {
+      const response = await projectsAPI.assignMembers(projectId, newTeamMembers);
+      if (response.data.success) {
+        // Update team members from response
+        const updatedProject = response.data.project;
+        const members = updatedProject.teamMembers || updatedProject.members || [];
+        setTeamMembers(members.map(m => (m._id || m).toString()));
+      }
+    } catch (error) {
+      console.error('Error assigning team members:', error);
+      alert(error.response?.data?.message || 'Failed to update team members. Please try again.');
+      // Revert on error
+      fetchProjectTeamMembers();
+    } finally {
+      setAssigningMembers(false);
+    }
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'team', label: 'Team', icon: '👥' },
     { id: 'timesheets', label: 'Timesheets', icon: '⏱️' },
     { id: 'sales-orders', label: 'Sales Orders', icon: '📋', count: salesOrders.length },
     { id: 'purchase-orders', label: 'Purchase Orders', icon: '🛒', count: purchaseOrders.length },
@@ -185,13 +239,72 @@ const ProjectSettings = ({ projectId, project }) => {
             </div>
           )}
 
+          {/* Team Tab */}
+          {activeTab === 'team' && !loading && (
+            <div className="team-tab">
+              <h2>Team Members</h2>
+              <p className="team-description">Assign team members to this project. They will be able to view and work on project tasks.</p>
+              <div className="team-members-selector" style={{ marginTop: '20px' }}>
+                {users.filter(user => user.role === 'Team').map(user => {
+                  const userId = user._id || user.id;
+                  const isAssigned = teamMembers.includes(userId.toString());
+                  return (
+                    <div key={userId} className="team-member-item" style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      padding: '12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      marginBottom: '8px',
+                      backgroundColor: isAssigned ? '#f0f9ff' : '#fff'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={isAssigned}
+                        onChange={(e) => handleTeamMemberChange(userId.toString(), e.target.checked)}
+                        disabled={assigningMembers}
+                        style={{ marginRight: '12px', width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', color: '#1f2937' }}>{user.name}</div>
+                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{user.email}</div>
+                      </div>
+                      {isAssigned && (
+                        <span style={{ 
+                          padding: '4px 8px', 
+                          backgroundColor: '#10b981', 
+                          color: 'white', 
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600'
+                        }}>
+                          Assigned
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                {users.filter(user => user.role === 'Team').length === 0 && (
+                  <p style={{ color: '#6b7280', fontStyle: 'italic', marginTop: '20px' }}>
+                    No team members available. Team members can be created in the Admin Dashboard.
+                  </p>
+                )}
+              </div>
+              {assigningMembers && (
+                <div style={{ marginTop: '20px', padding: '12px', backgroundColor: '#fef3c7', borderRadius: '8px', color: '#92400e' }}>
+                  Updating team members...
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Timesheets Tab */}
           {activeTab === 'timesheets' && !loading && (
             <TimesheetManagement projectId={projectId} onRefresh={fetchAllDocuments} />
           )}
 
           {/* Document Tabs */}
-          {activeTab !== 'overview' && activeTab !== 'timesheets' && !loading && (
+          {activeTab !== 'overview' && activeTab !== 'timesheets' && activeTab !== 'team' && !loading && (
             <div className="documents-tab">
               <div className="documents-header">
                 <h2>{tabs.find(t => t.id === activeTab)?.label}</h2>

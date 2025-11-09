@@ -42,10 +42,11 @@
 .project-overview-card {
   background: white;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .project-overview-header {
@@ -54,6 +55,8 @@
   align-items: flex-start;
   padding: 1.25rem 1.5rem 0.75rem;
   position: relative;
+  overflow: visible;
+  z-index: 1;
 }
 
 .project-overview-tags {
@@ -83,6 +86,7 @@
 
 .project-overview-menu {
   position: relative;
+  z-index: 1002;
 }
 
 .project-overview-menu-btn {
@@ -96,6 +100,8 @@
   color: var(--gray-600);
   border-radius: 6px;
   transition: all 0.2s;
+  position: relative;
+  z-index: 1003;
 }
 
 .project-overview-menu-btn:hover {
@@ -103,18 +109,37 @@
   color: var(--gray-900);
 }
 
+.project-overview-menu-btn:focus {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
 .project-overview-menu-dropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 0.5rem);
   right: 0;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.1);
   min-width: 150px;
-  z-index: 10;
-  margin-top: 0.5rem;
-  overflow: hidden;
+  z-index: 1004;
+  overflow: visible;
   border: 1px solid var(--gray-200);
+  animation: fadeInDropdown 0.15s ease;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+}
+
+@keyframes fadeInDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .menu-item {

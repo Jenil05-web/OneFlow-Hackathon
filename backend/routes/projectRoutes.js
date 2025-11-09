@@ -8,8 +8,8 @@ const router = express.Router();
 
 /**
  * 🧠 Role-based access:
- * - Admin: full CRUD
- * - Manager: can create, view, and update
+ * - Admin: full CRUD (only Admin can update/edit projects)
+ * - Manager: can create, view, and assign team members to projects
  * - Team: can view assigned projects only
  */
 
@@ -169,9 +169,9 @@ router.get("/:id", ensureAuthenticated, async (req, res) => {
 
 /**
  * @route   PUT /api/projects/:id
- * @desc    Update project details (Admin / Manager only)
+ * @desc    Update project details (Admin only)
  */
-router.put("/:id", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+router.put("/:id", ensureAuthenticated, ensureRole(["Admin"]), async (req, res) => {
   try {
     const updates = req.body;
     const project = await Project.findByIdAndUpdate(req.params.id, updates, { new: true });
@@ -251,9 +251,9 @@ router.put("/:id/assign", ensureAuthenticated, ensureRole(["Admin", "Manager"]),
 
 /**
  * @route   PUT /api/projects/:id/status
- * @desc    Update project status (Admin / Manager only)
+ * @desc    Update project status (Admin only)
  */
-router.put("/:id/status", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+router.put("/:id/status", ensureAuthenticated, ensureRole(["Admin"]), async (req, res) => {
   try {
     const { status } = req.body;
     const validStatuses = ["Planning", "In Progress", "On Hold", "Completed", "Cancelled"];
