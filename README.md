@@ -221,16 +221,3 @@ This project is open-source and available under the MIT License.
 For support or questions, reach out at:
 📧 Email: oneflow.team@gmail.com
 🌐 GitHub: https://github.com/Jenil05-web/OneFlow-Hackathon
-
-
-“Plan smarter, manage faster — with OneFlow.”
-
-
----
-
-### ✅ Next Steps (Optional)
-If you want, I can also generate:
-- A **shorter README** version for submission (1-page overview)
-- Or a **developer setup guide** (for teammates to run backend/frontend easily)
-
-Would you like me to generate those next?
