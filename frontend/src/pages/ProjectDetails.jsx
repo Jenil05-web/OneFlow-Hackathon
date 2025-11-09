@@ -4,6 +4,7 @@ import { projectsAPI, tasksAPI } from '../services/api';
 import KanbanBoard from '../components/Kanban/KanbanBoard';
 import ProjectSettings from '../components/ProjectSettings';
 import TaskDetails from '../components/TaskDetails';
+import LinksPanel from '../components/LinksPanel';
 import './ProjectDetails.css';
 
 const ProjectDetails = () => {
@@ -137,6 +138,7 @@ const ProjectDetails = () => {
             </h1>
           </div>
           <div className="project-actions">
+            <LinksPanel projectId={projectId} />
             <button 
               className="project-action-button btn-secondary"
               onClick={() => navigate('/dashboard')}

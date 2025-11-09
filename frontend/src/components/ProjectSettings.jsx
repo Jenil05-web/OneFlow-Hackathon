@@ -6,6 +6,7 @@ import CreateInvoice from './documents/CreateInvoice';
 import CreateVendorBill from './documents/CreateVendorBill';
 import CreateExpense from './documents/CreateExpense';
 import TimesheetManagement from './TimesheetManagement';
+import jsPDF from 'jspdf';
 import './ProjectSettings.css';
 
 const ProjectSettings = ({ projectId, project }) => {
@@ -319,19 +320,29 @@ const ProjectSettings = ({ projectId, project }) => {
 
               <div className="documents-list">
                 {activeTab === 'sales-orders' && (
-                  <SalesOrdersList salesOrders={salesOrders} />
+                  <div data-tab="sales-orders">
+                    <SalesOrdersList salesOrders={salesOrders} />
+                  </div>
                 )}
                 {activeTab === 'purchase-orders' && (
-                  <PurchaseOrdersList purchaseOrders={purchaseOrders} />
+                  <div data-tab="purchase-orders">
+                    <PurchaseOrdersList purchaseOrders={purchaseOrders} />
+                  </div>
                 )}
                 {activeTab === 'invoices' && (
-                  <InvoicesList invoices={invoices} />
+                  <div data-tab="invoices">
+                    <InvoicesList invoices={invoices} />
+                  </div>
                 )}
                 {activeTab === 'vendor-bills' && (
-                  <VendorBillsList vendorBills={vendorBills} />
+                  <div data-tab="vendor-bills">
+                    <VendorBillsList vendorBills={vendorBills} />
+                  </div>
                 )}
                 {activeTab === 'expenses' && (
-                  <ExpensesList expenses={expenses} onRefresh={fetchAllDocuments} />
+                  <div data-tab="expenses">
+                    <ExpensesList expenses={expenses} onRefresh={fetchAllDocuments} />
+                  </div>
                 )}
               </div>
             </div>
@@ -449,6 +460,182 @@ const PurchaseOrdersList = ({ purchaseOrders }) => {
 };
 
 const InvoicesList = ({ invoices }) => {
+  const [downloading, setDownloading] = useState(null);
+
+  const downloadInvoicePDF = async (invoiceId) => {
+    setDownloading(invoiceId);
+    try {
+      // Fetch full invoice details
+      const response = await billingAPI.getInvoice(invoiceId);
+      const invoice = response.data.invoice || response.data;
+      
+      // Fetch project details if not populated
+      let projectName = null;
+      if (invoice.project) {
+        if (typeof invoice.project === 'string') {
+          try {
+            const projectRes = await projectsAPI.getById(invoice.project);
+            if (projectRes.data.success) {
+              projectName = projectRes.data.project?.name;
+            }
+          } catch (err) {
+            console.error('Error fetching project:', err);
+          }
+        } else {
+          projectName = invoice.project?.name;
+        }
+      }
+      
+      // Fetch sales order details if not populated
+      let salesOrderNumber = null;
+      if (invoice.salesOrder) {
+        if (typeof invoice.salesOrder === 'string') {
+          try {
+            const soRes = await billingAPI.getSalesOrder(invoice.salesOrder);
+            if (soRes.data.success) {
+              salesOrderNumber = soRes.data.salesOrder?.number;
+            }
+          } catch (err) {
+            console.error('Error fetching sales order:', err);
+          }
+        } else {
+          salesOrderNumber = invoice.salesOrder?.number;
+        }
+      }
+
+      // Create PDF
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      let yPos = margin;
+
+      // Header
+      doc.setFontSize(24);
+      doc.setFont(undefined, 'bold');
+      doc.text('INVOICE', pageWidth - margin, yPos, { align: 'right' });
+      yPos += 10;
+
+      // Invoice details
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Invoice #: ${invoice.number || 'N/A'}`, margin, yPos);
+      yPos += 6;
+      doc.text(`Date: ${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : 'N/A'}`, margin, yPos);
+      yPos += 6;
+      if (invoice.dueDate) {
+        doc.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`, margin, yPos);
+        yPos += 6;
+      }
+      doc.text(`Status: ${invoice.status || 'N/A'}`, margin, yPos);
+      yPos += 6;
+      
+      // Project and Sales Order links
+      if (projectName) {
+        doc.setFont(undefined, 'normal');
+        doc.text(`Project: ${projectName}`, margin, yPos);
+        yPos += 6;
+      }
+      if (salesOrderNumber) {
+        doc.text(`Sales Order: ${salesOrderNumber}`, margin, yPos);
+        yPos += 6;
+      }
+      yPos += 9;
+
+      // Client information
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Bill To:', margin, yPos);
+      yPos += 7;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      if (invoice.clientName) {
+        doc.text(invoice.clientName, margin, yPos);
+        yPos += 6;
+      }
+      if (invoice.clientEmail) {
+        doc.text(invoice.clientEmail, margin, yPos);
+        yPos += 6;
+      }
+      if (invoice.clientAddress) {
+        const addressLines = doc.splitTextToSize(invoice.clientAddress, pageWidth - 2 * margin);
+        doc.text(addressLines, margin, yPos);
+        yPos += addressLines.length * 6;
+      }
+      yPos += 10;
+
+      // Line items table
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Items', margin, yPos);
+      yPos += 8;
+
+      // Table header
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Description', margin, yPos);
+      doc.text('Qty', margin + 100, yPos);
+      doc.text('Price', margin + 120, yPos);
+      doc.text('Amount', pageWidth - margin, yPos, { align: 'right' });
+      yPos += 6;
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 5;
+
+      // Table rows
+      doc.setFont(undefined, 'normal');
+      const subtotal = invoice.lines?.reduce((sum, line) => {
+        const amount = (line.quantity || 0) * (line.unitPrice || 0);
+        const description = line.description || 'N/A';
+        const qty = line.quantity || 0;
+        const price = line.unitPrice || 0;
+
+        // Check if we need a new page
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = margin;
+        }
+
+        doc.text(description.substring(0, 40), margin, yPos);
+        doc.text(qty.toString(), margin + 100, yPos);
+        doc.text(`₹${price.toFixed(2)}`, margin + 120, yPos);
+        doc.text(`₹${amount.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 6;
+
+        return sum + amount;
+      }, 0) || 0;
+
+      yPos += 5;
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 8;
+
+      // Totals
+      doc.setFont(undefined, 'normal');
+      doc.text('Subtotal:', pageWidth - margin - 40, yPos, { align: 'right' });
+      doc.text(`₹${subtotal.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+      yPos += 6;
+
+      if (invoice.taxRate && invoice.taxRate > 0) {
+        const tax = subtotal * (invoice.taxRate / 100);
+        doc.text(`Tax (${invoice.taxRate}%):`, pageWidth - margin - 40, yPos, { align: 'right' });
+        doc.text(`₹${tax.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 6;
+      }
+
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Total:', pageWidth - margin - 40, yPos, { align: 'right' });
+      doc.text(`₹${(invoice.total || subtotal).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+
+      // Save PDF
+      const fileName = `Invoice_${invoice.number || invoice._id}.pdf`;
+      doc.save(fileName);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setDownloading(null);
+    }
+  };
+
   if (invoices.length === 0) {
     return <div className="empty-state">No invoices found. Create one to get started.</div>;
   }
@@ -463,6 +650,7 @@ const InvoicesList = ({ invoices }) => {
             <th>Total</th>
             <th>Status</th>
             <th>Due Date</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -473,6 +661,16 @@ const InvoicesList = ({ invoices }) => {
               <td>₹{inv.total?.toLocaleString('en-IN') || 0}</td>
               <td><span className={`status-badge ${inv.status?.toLowerCase()}`}>{inv.status}</span></td>
               <td>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}</td>
+              <td>
+                <button
+                  onClick={() => downloadInvoicePDF(inv._id)}
+                  disabled={downloading === inv._id}
+                  className="btn-download"
+                  title="Download PDF"
+                >
+                  {downloading === inv._id ? '...' : '📥'}
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

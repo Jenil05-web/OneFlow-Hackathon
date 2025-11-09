@@ -86,7 +86,7 @@ export default function OneFlowLanding() {
             </p>
             <div className="hero-cta">
               <Link to="/signup" className="btn-primary-large">
-                Start Free Trial
+                Start Free
                 <svg
                   width="20"
                   height="20"
@@ -99,7 +99,7 @@ export default function OneFlowLanding() {
                 </svg>
               </Link>
               <Link to="/login" className="btn-secondary-large">
-                Watch Demo
+                Continue
               </Link>
             </div>
             <div className="hero-stats">
@@ -118,16 +118,43 @@ export default function OneFlowLanding() {
             </div>
           </div>
           <div className="hero-image">
-            <div className="image-wrapper">
-              <img
-                src="/Images/image.png"
-                alt="OneFlow Dashboard Preview"
-                onError={(e) => {
-                  e.target.src =
-                    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop";
-                }}
-              />
-              <div className="image-overlay"></div>
+            <div className="dashboard-preview">
+              <div className="preview-header">
+                <div className="preview-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <div className="preview-title">OneFlow Dashboard</div>
+              </div>
+              <div className="preview-content">
+                <div className="preview-card preview-card-1">
+                  <div className="card-icon"></div>
+                  <div className="card-content">
+                    <div className="card-line card-line-1"></div>
+                    <div className="card-line card-line-2"></div>
+                  </div>
+                </div>
+                <div className="preview-card preview-card-2">
+                  <div className="card-icon"></div>
+                  <div className="card-content">
+                    <div className="card-line card-line-1"></div>
+                    <div className="card-line card-line-2"></div>
+                  </div>
+                </div>
+                <div className="preview-card preview-card-3">
+                  <div className="card-icon"></div>
+                  <div className="card-content">
+                    <div className="card-line card-line-1"></div>
+                    <div className="card-line card-line-2"></div>
+                  </div>
+                </div>
+                <div className="preview-stats">
+                  <div className="stat-bar stat-bar-1"></div>
+                  <div className="stat-bar stat-bar-2"></div>
+                  <div className="stat-bar stat-bar-3"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
