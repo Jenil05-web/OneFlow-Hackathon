@@ -6,6 +6,28 @@ import { ensureAuthenticated, ensureRole } from "../middleware/authMiddleware.js
 
 const router = express.Router();
 
+// Helper: recompute project progress as average of its tasks' progress
+async function recomputeProjectProgress(projectId) {
+  try {
+    if (!projectId) return null;
+    const tasks = await Task.find({ project: projectId });
+    if (!tasks || tasks.length === 0) {
+      // No tasks -> progress 0
+      return await Project.findByIdAndUpdate(projectId, { progress: 0 }, { new: true });
+    }
+
+    const total = tasks.reduce((sum, t) => sum + (Number(t.progress) || 0), 0);
+    const avg = Math.round(total / tasks.length);
+
+    // Clamp between 0-100 just in case
+    const p = Math.max(0, Math.min(100, avg));
+    return await Project.findByIdAndUpdate(projectId, { progress: p }, { new: true });
+  } catch (err) {
+    console.error('⚠️ Error recomputing project progress:', err.message);
+    return null;
+  }
+}
+
 /**
  * 🧠 Role-based access:
  * - Admin → full CRUD (only Admin can update/edit tasks)
@@ -49,6 +71,8 @@ router.post("/", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (r
       message: "Task created successfully",
       task,
     });
+    // Recompute project progress after creating a task
+    try { await recomputeProjectProgress(task.project); } catch (e) { /* ignore */ }
   } catch (error) {
     console.error("❌ Create Task Error:", error.message);
     res.status(500).json({ success: false, message: "Server error creating task" });
@@ -137,6 +161,8 @@ router.put("/:id", ensureAuthenticated, ensureRole(["Admin"]), async (req, res) 
       message: "Task updated successfully",
       task,
     });
+    // Recompute project progress after updating a task (if project present)
+    try { await recomputeProjectProgress(task.project); } catch (e) { /* ignore */ }
   } catch (error) {
     console.error("❌ Update Task Error:", error.message);
     res.status(500).json({ success: false, message: "Server error updating task" });
@@ -173,6 +199,8 @@ router.put("/:id/status", ensureAuthenticated, ensureRole(["Admin"]), async (req
       message: `Task status updated to ${status}`,
       task,
     });
+    // Recompute project progress in case status implies progress change externally
+    try { await recomputeProjectProgress(task.project); } catch (e) { /* ignore */ }
   } catch (error) {
     console.error("❌ Update Task Status Error:", error.message);
     res.status(500).json({ success: false, message: "Server error updating task status" });

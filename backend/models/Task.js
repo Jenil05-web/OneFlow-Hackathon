@@ -189,7 +189,24 @@ TaskSchema.statics.recalculateTimeLogged = async function (taskId) {
   ]);
 
   const hours = total.length > 0 ? total[0].total : 0;
-  await this.findByIdAndUpdate(taskId, { timeLogged: hours });
+  const updatedTask = await this.findByIdAndUpdate(taskId, { timeLogged: hours }, { new: true });
+
+  // After updating timeLogged, recompute project progress as needed.
+  try {
+    if (updatedTask && updatedTask.project) {
+      const Project = mongoose.model('Project');
+      // Compute average progress across tasks for the project
+      const tasks = await this.find({ project: updatedTask.project });
+      if (tasks && tasks.length > 0) {
+        const totalProgress = tasks.reduce((s, t) => s + (Number(t.progress) || 0), 0);
+        const avg = Math.round(totalProgress / tasks.length);
+        await Project.findByIdAndUpdate(updatedTask.project, { progress: Math.max(0, Math.min(100, avg)) });
+      }
+    }
+  } catch (err) {
+    console.error('⚠️ Error updating project progress after timeLogged change:', err.message);
+  }
+
   return hours;
 };
 

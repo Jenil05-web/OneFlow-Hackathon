@@ -243,7 +243,9 @@ const ProjectDetails = () => {
           projectId={projectId}
           onClose={() => setSelectedTask(null)}
           onUpdate={() => {
+            // Refresh tasks and project data so progress is re-fetched from server
             fetchTasks();
+            fetchProjectData();
             setSelectedTask(null);
           }}
         />
