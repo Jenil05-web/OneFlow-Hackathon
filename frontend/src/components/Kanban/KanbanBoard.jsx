@@ -13,6 +13,8 @@ const KanbanBoard = ({ tasks = [], onTaskStatusUpdate, projectId, onTaskClick })
   const [activeId, setActiveId] = useState(null);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const userId = user._id || user.id;
+  const isAdmin = user?.role === 'Admin';
+  const isManagerOrAdmin = user?.role === 'Admin' || user?.role === 'Manager';
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -145,6 +147,12 @@ const KanbanBoard = ({ tasks = [], onTaskStatusUpdate, projectId, onTaskClick })
   }, [totalPages, currentPage]);
 
   const handleTaskStatusUpdate = async (taskId, newColumnId) => {
+    // Only Admin can update task status
+    if (!isAdmin) {
+      alert('Only administrators can update task status.');
+      return;
+    }
+
     const newStatus = columnToStatusMap[newColumnId];
     if (!newStatus) return;
 
@@ -154,6 +162,7 @@ const KanbanBoard = ({ tasks = [], onTaskStatusUpdate, projectId, onTaskClick })
         await onTaskStatusUpdate(taskId, newStatus);
       } catch (error) {
         console.error('Failed to update task status:', error);
+        alert(error.response?.data?.message || 'Failed to update task status');
       }
     }
   };
@@ -187,12 +196,14 @@ const KanbanBoard = ({ tasks = [], onTaskStatusUpdate, projectId, onTaskClick })
     <div className="kanban-board">
       <div className="kanban-header">
         <div className="kanban-header-left">
-          <button
-            className="new-task-btn"
-            onClick={() => projectId && navigate(`/project/${projectId}/task/new`)}
-          >
-            New
-          </button>
+          {(isAdmin || isManagerOrAdmin) && (
+            <button
+              className="new-task-btn"
+              onClick={() => projectId && navigate(`/project/${projectId}/task/new`)}
+            >
+              New
+            </button>
+          )}
         </div>
         <div className="kanban-header-right">
           <div className="pagination-controls">
@@ -231,10 +242,11 @@ const KanbanBoard = ({ tasks = [], onTaskStatusUpdate, projectId, onTaskClick })
         </div>
       </div>
       <DndContext
-        sensors={sensors}
+        sensors={isAdmin ? sensors : []} // Disable dragging for non-admin users
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        disabled={!isAdmin} // Disable drag and drop for non-admin users
       >
         <div className={`kanban-columns-container ${viewMode === 'list' ? 'list-view' : ''}`}>
           {Object.entries(paginatedColumns).map(([columnId, column]) => (

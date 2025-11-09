@@ -4,6 +4,7 @@ import { projectsAPI, tasksAPI } from '../services/api';
 import KanbanBoard from '../components/Kanban/KanbanBoard';
 import ProjectSettings from '../components/ProjectSettings';
 import TaskDetails from '../components/TaskDetails';
+import LinksPanel from '../components/LinksPanel';
 import './ProjectDetails.css';
 
 const ProjectDetails = () => {
@@ -15,6 +16,12 @@ const ProjectDetails = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('tasks'); // 'project', 'tasks', or 'settings'
   const [selectedTask, setSelectedTask] = useState(null);
+  
+  // Get user role
+  const userData = localStorage.getItem('user');
+  const user = userData ? JSON.parse(userData) : null;
+  const isAdmin = user?.role === 'Admin';
+  const isManagerOrAdmin = user?.role === 'Admin' || user?.role === 'Manager';
 
   useEffect(() => {
     fetchProjectData();
@@ -75,13 +82,19 @@ const ProjectDetails = () => {
   };
 
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
+    // Only Admin can update task status
+    if (!isAdmin) {
+      alert('Only administrators can update task status.');
+      return;
+    }
+
     try {
       await tasksAPI.updateStatus(taskId, newStatus);
       // Refresh tasks
       fetchTasks();
     } catch (err) {
       console.error('Error updating task status:', err);
-      alert('Failed to update task status');
+      alert(err.response?.data?.message || 'Failed to update task status');
     }
   };
 
@@ -125,6 +138,7 @@ const ProjectDetails = () => {
             </h1>
           </div>
           <div className="project-actions">
+            <LinksPanel projectId={projectId} />
             <button 
               className="project-action-button btn-secondary"
               onClick={() => navigate('/dashboard')}
@@ -149,12 +163,14 @@ const ProjectDetails = () => {
           >
             Tasks
           </button>
-          <button
-            className={`project-tab ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settings')}
-          >
-            Settings
-          </button>
+          {(isAdmin || isManagerOrAdmin) && (
+            <button
+              className={`project-tab ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              Settings
+            </button>
+          )}
         </div>
       </div>
 

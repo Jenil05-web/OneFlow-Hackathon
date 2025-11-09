@@ -22,7 +22,7 @@ function AppContent() {
   const showNavbar = location.pathname !== '/'; // Hide navbar on landing page
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {showNavbar && <Navbar />}
       <Routes>
         <Route

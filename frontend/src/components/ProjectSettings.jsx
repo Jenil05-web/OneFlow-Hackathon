@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { billingAPI } from '../services/api';
+import { billingAPI, projectsAPI, adminAPI } from '../services/api';
 import CreateSalesOrder from './documents/CreateSalesOrder';
 import CreatePurchaseOrder from './documents/CreatePurchaseOrder';
 import CreateInvoice from './documents/CreateInvoice';
 import CreateVendorBill from './documents/CreateVendorBill';
 import CreateExpense from './documents/CreateExpense';
 import TimesheetManagement from './TimesheetManagement';
+import jsPDF from 'jspdf';
 import './ProjectSettings.css';
 
 const ProjectSettings = ({ projectId, project }) => {
@@ -17,12 +18,17 @@ const ProjectSettings = ({ projectId, project }) => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(null); // 'sales-order', 'purchase-order', 'invoice', 'vendor-bill', 'expense'
+  const [users, setUsers] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [assigningMembers, setAssigningMembers] = useState(false);
 
   useEffect(() => {
     if (projectId) {
       fetchAllDocuments();
+      fetchUsers();
+      fetchProjectTeamMembers();
     }
-  }, [projectId]);
+  }, [projectId, project]);
 
   const fetchAllDocuments = async () => {
     setLoading(true);
@@ -62,8 +68,57 @@ const ProjectSettings = ({ projectId, project }) => {
     .reduce((sum, item) => sum + (item.total || item.amount || 0), 0);
   const profit = totalRevenue - totalCost;
 
+  const fetchUsers = async () => {
+    try {
+      const response = await adminAPI.getUsers();
+      if (response.data.success) {
+        setUsers(response.data.users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchProjectTeamMembers = () => {
+    if (project) {
+      const members = project.teamMembers || project.members || [];
+      setTeamMembers(members.map(m => (m._id || m).toString()));
+    }
+  };
+
+  const handleTeamMemberChange = async (userId, isChecked) => {
+    let newTeamMembers;
+    if (isChecked) {
+      newTeamMembers = [...teamMembers, userId];
+    } else {
+      newTeamMembers = teamMembers.filter(id => id !== userId);
+    }
+
+    // Optimistically update UI
+    setTeamMembers(newTeamMembers);
+    setAssigningMembers(true);
+
+    try {
+      const response = await projectsAPI.assignMembers(projectId, newTeamMembers);
+      if (response.data.success) {
+        // Update team members from response
+        const updatedProject = response.data.project;
+        const members = updatedProject.teamMembers || updatedProject.members || [];
+        setTeamMembers(members.map(m => (m._id || m).toString()));
+      }
+    } catch (error) {
+      console.error('Error assigning team members:', error);
+      alert(error.response?.data?.message || 'Failed to update team members. Please try again.');
+      // Revert on error
+      fetchProjectTeamMembers();
+    } finally {
+      setAssigningMembers(false);
+    }
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'team', label: 'Team', icon: '👥' },
     { id: 'timesheets', label: 'Timesheets', icon: '⏱️' },
     { id: 'sales-orders', label: 'Sales Orders', icon: '📋', count: salesOrders.length },
     { id: 'purchase-orders', label: 'Purchase Orders', icon: '🛒', count: purchaseOrders.length },
@@ -185,13 +240,72 @@ const ProjectSettings = ({ projectId, project }) => {
             </div>
           )}
 
+          {/* Team Tab */}
+          {activeTab === 'team' && !loading && (
+            <div className="team-tab">
+              <h2>Team Members</h2>
+              <p className="team-description">Assign team members to this project. They will be able to view and work on project tasks.</p>
+              <div className="team-members-selector" style={{ marginTop: '20px' }}>
+                {users.filter(user => user.role === 'Team').map(user => {
+                  const userId = user._id || user.id;
+                  const isAssigned = teamMembers.includes(userId.toString());
+                  return (
+                    <div key={userId} className="team-member-item" style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      padding: '12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      marginBottom: '8px',
+                      backgroundColor: isAssigned ? '#f0f9ff' : '#fff'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={isAssigned}
+                        onChange={(e) => handleTeamMemberChange(userId.toString(), e.target.checked)}
+                        disabled={assigningMembers}
+                        style={{ marginRight: '12px', width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', color: '#1f2937' }}>{user.name}</div>
+                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{user.email}</div>
+                      </div>
+                      {isAssigned && (
+                        <span style={{ 
+                          padding: '4px 8px', 
+                          backgroundColor: '#10b981', 
+                          color: 'white', 
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600'
+                        }}>
+                          Assigned
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                {users.filter(user => user.role === 'Team').length === 0 && (
+                  <p style={{ color: '#6b7280', fontStyle: 'italic', marginTop: '20px' }}>
+                    No team members available. Team members can be created in the Admin Dashboard.
+                  </p>
+                )}
+              </div>
+              {assigningMembers && (
+                <div style={{ marginTop: '20px', padding: '12px', backgroundColor: '#fef3c7', borderRadius: '8px', color: '#92400e' }}>
+                  Updating team members...
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Timesheets Tab */}
           {activeTab === 'timesheets' && !loading && (
             <TimesheetManagement projectId={projectId} onRefresh={fetchAllDocuments} />
           )}
 
           {/* Document Tabs */}
-          {activeTab !== 'overview' && activeTab !== 'timesheets' && !loading && (
+          {activeTab !== 'overview' && activeTab !== 'timesheets' && activeTab !== 'team' && !loading && (
             <div className="documents-tab">
               <div className="documents-header">
                 <h2>{tabs.find(t => t.id === activeTab)?.label}</h2>
@@ -206,19 +320,29 @@ const ProjectSettings = ({ projectId, project }) => {
 
               <div className="documents-list">
                 {activeTab === 'sales-orders' && (
-                  <SalesOrdersList salesOrders={salesOrders} />
+                  <div data-tab="sales-orders">
+                    <SalesOrdersList salesOrders={salesOrders} />
+                  </div>
                 )}
                 {activeTab === 'purchase-orders' && (
-                  <PurchaseOrdersList purchaseOrders={purchaseOrders} />
+                  <div data-tab="purchase-orders">
+                    <PurchaseOrdersList purchaseOrders={purchaseOrders} />
+                  </div>
                 )}
                 {activeTab === 'invoices' && (
-                  <InvoicesList invoices={invoices} />
+                  <div data-tab="invoices">
+                    <InvoicesList invoices={invoices} />
+                  </div>
                 )}
                 {activeTab === 'vendor-bills' && (
-                  <VendorBillsList vendorBills={vendorBills} />
+                  <div data-tab="vendor-bills">
+                    <VendorBillsList vendorBills={vendorBills} />
+                  </div>
                 )}
                 {activeTab === 'expenses' && (
-                  <ExpensesList expenses={expenses} onRefresh={fetchAllDocuments} />
+                  <div data-tab="expenses">
+                    <ExpensesList expenses={expenses} onRefresh={fetchAllDocuments} />
+                  </div>
                 )}
               </div>
             </div>
@@ -336,6 +460,182 @@ const PurchaseOrdersList = ({ purchaseOrders }) => {
 };
 
 const InvoicesList = ({ invoices }) => {
+  const [downloading, setDownloading] = useState(null);
+
+  const downloadInvoicePDF = async (invoiceId) => {
+    setDownloading(invoiceId);
+    try {
+      // Fetch full invoice details
+      const response = await billingAPI.getInvoice(invoiceId);
+      const invoice = response.data.invoice || response.data;
+      
+      // Fetch project details if not populated
+      let projectName = null;
+      if (invoice.project) {
+        if (typeof invoice.project === 'string') {
+          try {
+            const projectRes = await projectsAPI.getById(invoice.project);
+            if (projectRes.data.success) {
+              projectName = projectRes.data.project?.name;
+            }
+          } catch (err) {
+            console.error('Error fetching project:', err);
+          }
+        } else {
+          projectName = invoice.project?.name;
+        }
+      }
+      
+      // Fetch sales order details if not populated
+      let salesOrderNumber = null;
+      if (invoice.salesOrder) {
+        if (typeof invoice.salesOrder === 'string') {
+          try {
+            const soRes = await billingAPI.getSalesOrder(invoice.salesOrder);
+            if (soRes.data.success) {
+              salesOrderNumber = soRes.data.salesOrder?.number;
+            }
+          } catch (err) {
+            console.error('Error fetching sales order:', err);
+          }
+        } else {
+          salesOrderNumber = invoice.salesOrder?.number;
+        }
+      }
+
+      // Create PDF
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      let yPos = margin;
+
+      // Header
+      doc.setFontSize(24);
+      doc.setFont(undefined, 'bold');
+      doc.text('INVOICE', pageWidth - margin, yPos, { align: 'right' });
+      yPos += 10;
+
+      // Invoice details
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Invoice #: ${invoice.number || 'N/A'}`, margin, yPos);
+      yPos += 6;
+      doc.text(`Date: ${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : 'N/A'}`, margin, yPos);
+      yPos += 6;
+      if (invoice.dueDate) {
+        doc.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`, margin, yPos);
+        yPos += 6;
+      }
+      doc.text(`Status: ${invoice.status || 'N/A'}`, margin, yPos);
+      yPos += 6;
+      
+      // Project and Sales Order links
+      if (projectName) {
+        doc.setFont(undefined, 'normal');
+        doc.text(`Project: ${projectName}`, margin, yPos);
+        yPos += 6;
+      }
+      if (salesOrderNumber) {
+        doc.text(`Sales Order: ${salesOrderNumber}`, margin, yPos);
+        yPos += 6;
+      }
+      yPos += 9;
+
+      // Client information
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Bill To:', margin, yPos);
+      yPos += 7;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      if (invoice.clientName) {
+        doc.text(invoice.clientName, margin, yPos);
+        yPos += 6;
+      }
+      if (invoice.clientEmail) {
+        doc.text(invoice.clientEmail, margin, yPos);
+        yPos += 6;
+      }
+      if (invoice.clientAddress) {
+        const addressLines = doc.splitTextToSize(invoice.clientAddress, pageWidth - 2 * margin);
+        doc.text(addressLines, margin, yPos);
+        yPos += addressLines.length * 6;
+      }
+      yPos += 10;
+
+      // Line items table
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Items', margin, yPos);
+      yPos += 8;
+
+      // Table header
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Description', margin, yPos);
+      doc.text('Qty', margin + 100, yPos);
+      doc.text('Price', margin + 120, yPos);
+      doc.text('Amount', pageWidth - margin, yPos, { align: 'right' });
+      yPos += 6;
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 5;
+
+      // Table rows
+      doc.setFont(undefined, 'normal');
+      const subtotal = invoice.lines?.reduce((sum, line) => {
+        const amount = (line.quantity || 0) * (line.unitPrice || 0);
+        const description = line.description || 'N/A';
+        const qty = line.quantity || 0;
+        const price = line.unitPrice || 0;
+
+        // Check if we need a new page
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = margin;
+        }
+
+        doc.text(description.substring(0, 40), margin, yPos);
+        doc.text(qty.toString(), margin + 100, yPos);
+        doc.text(`₹${price.toFixed(2)}`, margin + 120, yPos);
+        doc.text(`₹${amount.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 6;
+
+        return sum + amount;
+      }, 0) || 0;
+
+      yPos += 5;
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 8;
+
+      // Totals
+      doc.setFont(undefined, 'normal');
+      doc.text('Subtotal:', pageWidth - margin - 40, yPos, { align: 'right' });
+      doc.text(`₹${subtotal.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+      yPos += 6;
+
+      if (invoice.taxRate && invoice.taxRate > 0) {
+        const tax = subtotal * (invoice.taxRate / 100);
+        doc.text(`Tax (${invoice.taxRate}%):`, pageWidth - margin - 40, yPos, { align: 'right' });
+        doc.text(`₹${tax.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 6;
+      }
+
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Total:', pageWidth - margin - 40, yPos, { align: 'right' });
+      doc.text(`₹${(invoice.total || subtotal).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+
+      // Save PDF
+      const fileName = `Invoice_${invoice.number || invoice._id}.pdf`;
+      doc.save(fileName);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setDownloading(null);
+    }
+  };
+
   if (invoices.length === 0) {
     return <div className="empty-state">No invoices found. Create one to get started.</div>;
   }
@@ -350,6 +650,7 @@ const InvoicesList = ({ invoices }) => {
             <th>Total</th>
             <th>Status</th>
             <th>Due Date</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -360,6 +661,16 @@ const InvoicesList = ({ invoices }) => {
               <td>₹{inv.total?.toLocaleString('en-IN') || 0}</td>
               <td><span className={`status-badge ${inv.status?.toLowerCase()}`}>{inv.status}</span></td>
               <td>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}</td>
+              <td>
+                <button
+                  onClick={() => downloadInvoicePDF(inv._id)}
+                  disabled={downloading === inv._id}
+                  className="btn-download"
+                  title="Download PDF"
+                >
+                  {downloading === inv._id ? '...' : '📥'}
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

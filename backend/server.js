@@ -14,8 +14,9 @@ const app = express();
 // ---------------------
 // 🧩 Middleware
 // ---------------------
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increase JSON body parser limit to handle base64 images (50MB limit)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // CORS setup (multiple frontend ports for dev)
 app.use(
@@ -175,6 +176,15 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
     // Global error handler
     app.use((err, req, res, next) => {
       console.error("❌ Global error:", err.stack);
+      
+      // Handle payload too large errors
+      if (err.type === 'entity.too.large') {
+        return res.status(413).json({
+          success: false,
+          message: "Request payload too large. Please reduce the image size or use a smaller image.",
+        });
+      }
+      
       res.status(500).json({
         success: false,
         message: "Internal Server Error",

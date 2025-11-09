@@ -8,8 +8,9 @@ const router = express.Router();
 
 /**
  * 🧠 Role-based access:
- * - Admin / Manager → full CRUD
- * - Team Member → view and update only assigned tasks
+ * - Admin → full CRUD (only Admin can update/edit tasks)
+ * - Manager → can create, view tasks, and assign/reassign tasks to users
+ * - Team Member → view only assigned tasks
  */
 
 /**
@@ -120,9 +121,9 @@ router.get("/:id", ensureAuthenticated, async (req, res) => {
 
 /**
  * @route   PUT /api/tasks/:id
- * @desc    Update a task (Admin / Manager only)
+ * @desc    Update a task (Admin only)
  */
-router.put("/:id", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async (req, res) => {
+router.put("/:id", ensureAuthenticated, ensureRole(["Admin"]), async (req, res) => {
   try {
     const updates = req.body;
     const task = await Task.findByIdAndUpdate(req.params.id, updates, { new: true });
@@ -144,9 +145,9 @@ router.put("/:id", ensureAuthenticated, ensureRole(["Admin", "Manager"]), async 
 
 /**
  * @route   PUT /api/tasks/:id/status
- * @desc    Update task status (Admin / Manager / Assigned Team Member)
+ * @desc    Update task status (Admin only)
  */
-router.put("/:id/status", ensureAuthenticated, async (req, res) => {
+router.put("/:id/status", ensureAuthenticated, ensureRole(["Admin"]), async (req, res) => {
   try {
     const { status } = req.body;
     const validStatuses = ["To Do", "In Progress", "Review", "Completed", "Blocked"];
@@ -155,19 +156,17 @@ router.put("/:id/status", ensureAuthenticated, async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid status value" });
     }
 
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    )
+      .populate("project", "name status")
+      .populate("assignedTo", "name email role");
 
     if (!task) {
       return res.status(404).json({ success: false, message: "Task not found" });
     }
-
-    // Check permissions
-    if (req.user.role === "Team" && String(task.assignedTo) !== String(req.user._id)) {
-      return res.status(403).json({ success: false, message: "Access denied" });
-    }
-
-    task.status = status;
-    await task.save();
 
     res.json({
       success: true,

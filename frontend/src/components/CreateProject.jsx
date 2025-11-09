@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { projectsAPI } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { projectsAPI, adminAPI } from '../services/api';
 import './CreateProject.css';
 
 const CreateProject = ({ onClose, onSuccess }) => {
@@ -13,13 +13,29 @@ const CreateProject = ({ onClose, onSuccess }) => {
     endDate: '',
     budget: 0,
     tags: [],
-    image: ''
+    image: '',
+    teamMembers: []
   });
   const [imagePreview, setImagePreview] = useState(null);
-
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tagInput, setTagInput] = useState('');
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await adminAPI.getUsers();
+      if (response.data.success) {
+        setUsers(response.data.users || []);
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,6 +86,22 @@ const CreateProject = ({ onClose, onSuccess }) => {
     }));
   };
 
+  const handleTeamMemberChange = (userId, isChecked) => {
+    setFormData(prev => {
+      if (isChecked) {
+        return {
+          ...prev,
+          teamMembers: [...prev.teamMembers, userId]
+        };
+      } else {
+        return {
+          ...prev,
+          teamMembers: prev.teamMembers.filter(id => id !== userId)
+        };
+      }
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -88,6 +120,7 @@ const CreateProject = ({ onClose, onSuccess }) => {
         budget: formData.budget ? parseFloat(formData.budget) : 0,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         image: formData.image || undefined,
+        teamMembers: formData.teamMembers.length > 0 ? formData.teamMembers : undefined,
       };
 
       const response = await projectsAPI.create(projectData);
@@ -303,6 +336,28 @@ const CreateProject = ({ onClose, onSuccess }) => {
                 onKeyDown={handleTagInput}
                 placeholder="Type and press Enter to add tags"
               />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="teamMembers">Team Members</label>
+            <div className="team-members-selector" style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }}>
+              {users.filter(user => user.role === 'Team').map(user => (
+                <div key={user._id} style={{ marginBottom: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.teamMembers.includes(user._id)}
+                      onChange={(e) => handleTeamMemberChange(user._id, e.target.checked)}
+                      style={{ marginRight: '8px' }}
+                    />
+                    <span>{user.name} ({user.email})</span>
+                  </label>
+                </div>
+              ))}
+              {users.filter(user => user.role === 'Team').length === 0 && (
+                <p style={{ color: '#666', fontStyle: 'italic' }}>No team members available</p>
+              )}
             </div>
           </div>
 

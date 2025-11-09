@@ -280,3 +280,92 @@
     padding: var(--spacing-lg);
   }
 }
+
+/* ============================================
+   DARK THEME STYLES
+   ============================================ */
+
+[data-theme="dark"] .project-details {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .project-info {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .project-info h1 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .project-info p {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .project-metadata-item {
+  background: var(--bg-tertiary);
+  border-color: var(--gray-700);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .project-metadata-item:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-500);
+  color: var(--primary-400);
+}
+
+[data-theme="dark"] .kanban-container {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+}
+
+[data-theme="dark"] .project-overview {
+  background: var(--bg-secondary);
+  border-color: var(--gray-700);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .project-overview p {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .project-header {
+  border-bottom-color: var(--gray-700);
+}
+
+[data-theme="dark"] .project-header h2 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .project-tabs {
+  border-bottom-color: var(--gray-700);
+}
+
+[data-theme="dark"] .project-tab {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .project-tab:hover {
+  color: var(--primary-400);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .project-tab.active {
+  color: var(--primary-400);
+  border-bottom-color: var(--primary-400);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--gray-700);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--primary-500);
+  color: var(--primary-400);
+}
