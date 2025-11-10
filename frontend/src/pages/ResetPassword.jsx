@@ -14,6 +14,8 @@ const ResetPassword = () => {
   const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const resetEmail = localStorage.getItem('resetEmail');
@@ -89,99 +91,470 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🔑</span>
+    <>
+      <style>{`
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        }
+
+        .reset-container {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #06b6d4 0%, #14b8a6 50%, #06b6d4 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2rem 1rem;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .background-blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(60px);
+          opacity: 0.3;
+          pointer-events: none;
+          animation: pulse 6s ease-in-out infinite;
+        }
+
+        .blob-1 {
+          top: -10rem;
+          right: -10rem;
+          width: 24rem;
+          height: 24rem;
+          background: #67e8f9;
+          animation-delay: 0s;
+        }
+
+        .blob-2 {
+          bottom: -10rem;
+          left: -10rem;
+          width: 24rem;
+          height: 24rem;
+          background: #5eead4;
+          animation-delay: 2s;
+        }
+
+        .blob-3 {
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 24rem;
+          height: 24rem;
+          background: #22d3ee;
+          animation-delay: 4s;
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 0.4;
+          }
+        }
+
+        .form-wrapper {
+          max-width: 28rem;
+          width: 100%;
+          position: relative;
+          z-index: 10;
+        }
+
+        .form-card {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border-radius: 1.5rem;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          padding: 2.5rem;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .accent-bar {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 0.375rem;
+          background: linear-gradient(90deg, #06b6d4 0%, #5eead4 50%, #06b6d4 100%);
+        }
+
+        .header-section {
+          text-align: center;
+          margin-bottom: 2.5rem;
+        }
+
+        .logo-circle {
+          display: inline-block;
+          width: 6rem;
+          height: 6rem;
+          background: linear-gradient(135deg, #06b6d4, #14b8a6);
+          border-radius: 50%;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          margin-bottom: 1.5rem;
+        }
+
+        .form-title {
+          font-size: 2.25rem;
+          font-weight: 700;
+          color: #1f2937;
+          margin-bottom: 0.75rem;
+        }
+
+        .form-subtitle {
+          color: #4b5563;
+          font-size: 0.875rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .email-display {
+          font-weight: 600;
+          color: #0891b2;
+          font-size: 1.125rem;
+        }
+
+        .alert {
+          margin-bottom: 1.5rem;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+        }
+
+        .alert-error {
+          background: #fef2f2;
+          border-left: 4px solid #ef4444;
+          color: #991b1b;
+        }
+
+        .alert-success {
+          background: #f0fdf4;
+          border-left: 4px solid #22c55e;
+          color: #166534;
+        }
+
+        .form-group {
+          margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 700;
+          color: #374151;
+          margin-bottom: 0.75rem;
+        }
+
+        .input-wrapper {
+          position: relative;
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 1rem 1.5rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 1rem;
+          font-size: 1rem;
+          background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+          transition: all 0.3s ease;
+          outline: none;
+        }
+
+        .form-input:hover {
+          border-color: #67e8f9;
+        }
+
+        .form-input:focus {
+          border-color: #06b6d4;
+          box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+        }
+
+        .otp-input {
+          text-align: center;
+          font-size: 2.25rem;
+          letter-spacing: 0.6em;
+          font-weight: 700;
+          padding: 1.25rem 1.5rem;
+        }
+
+        .password-input {
+          padding-right: 3.5rem;
+        }
+
+        .toggle-password-btn {
+          position: absolute;
+          right: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          padding: 0.25rem 0.75rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #0891b2;
+          background: #ecfeff;
+          border: none;
+          border-radius: 0.5rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .toggle-password-btn:hover {
+          background: #cffafe;
+          color: #0e7490;
+        }
+
+        .submit-btn {
+          width: 100%;
+          margin-top: 2rem;
+          background: linear-gradient(90deg, #06b6d4, #14b8a6);
+          color: white;
+          padding: 1.25rem;
+          border-radius: 1rem;
+          font-weight: 700;
+          font-size: 1.125rem;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-btn:hover:not(:disabled) {
+          background: linear-gradient(90deg, #0891b2, #0f766e);
+          transform: scale(1.02);
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .submit-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .btn-content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+        }
+
+        .spinner {
+          width: 1.25rem;
+          height: 1.25rem;
+          border: 3px solid rgba(255, 255, 255, 0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        .resend-section {
+          margin-top: 2.5rem;
+          padding-top: 2rem;
+          border-top: 2px solid #f3f4f6;
+          text-align: center;
+        }
+
+        .resend-text {
+          color: #4b5563;
+          font-size: 0.875rem;
+          margin-bottom: 1rem;
+        }
+
+        .resend-btn {
+          display: inline-block;
+          padding: 0.75rem 2rem;
+          color: #0891b2;
+          font-weight: 700;
+          font-size: 1rem;
+          background: #ecfeff;
+          border: none;
+          border-radius: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .resend-btn:hover:not(:disabled) {
+          background: #cffafe;
+          color: #0e7490;
+        }
+
+        .resend-btn:disabled {
+          color: #67e8f9;
+          cursor: not-allowed;
+        }
+
+        .footer-text {
+          text-align: center;
+          margin-top: 2rem;
+          color: white;
+          font-size: 0.875rem;
+          font-weight: 500;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 640px) {
+          .form-card {
+            padding: 2rem;
+          }
+
+          .form-title {
+            font-size: 1.875rem;
+          }
+
+          .logo-circle {
+            width: 5rem;
+            height: 5rem;
+          }
+
+          .otp-input {
+            font-size: 1.875rem;
+          }
+        }
+      `}</style>
+
+      <div className="reset-container">
+        <div className="background-blob blob-1"></div>
+        <div className="background-blob blob-2"></div>
+        <div className="background-blob blob-3"></div>
+
+        <div className="form-wrapper">
+          <div className="form-card">
+            <div className="accent-bar"></div>
+            
+            <div className="header-section">
+              <div className="logo-circle"></div>
+              
+              <h1 className="form-title">Reset Password</h1>
+              <p className="form-subtitle">
+                Enter the verification code sent to
+              </p>
+              <p className="email-display">{email}</p>
+            </div>
+
+            {error && (
+              <div className="alert alert-error">
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="alert alert-success">
+                {success}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label">
+                  Verification Code
+                </label>
+                <input
+                  type="text"
+                  name="otp"
+                  value={formData.otp}
+                  onChange={(e) => setFormData({ ...formData, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                  required
+                  maxLength="6"
+                  className="form-input otp-input"
+                  placeholder="______"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  New Password
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="newPassword"
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    required
+                    className="form-input password-input"
+                    placeholder="Enter new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="toggle-password-btn"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  Confirm New Password
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    className="form-input password-input"
+                    placeholder="Confirm new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="toggle-password-btn"
+                  >
+                    {showConfirmPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="submit-btn"
+              >
+                {loading ? (
+                  <span className="btn-content">
+                    <div className="spinner"></div>
+                    Resetting Password...
+                  </span>
+                ) : (
+                  'Reset Password'
+                )}
+              </button>
+            </form>
+
+            <div className="resend-section">
+              <p className="resend-text">Didn't receive the code?</p>
+              <button
+                onClick={handleResendOTP}
+                disabled={resendLoading}
+                className="resend-btn"
+              >
+                {resendLoading ? 'Sending...' : 'Resend OTP'}
+              </button>
+            </div>
           </div>
-          <h2 className="text-3xl font-bold text-gray-800">Reset Password</h2>
-          <p className="text-gray-600 mt-2">
-            Enter the OTP sent to <br />
-            <span className="font-medium text-indigo-600">{email}</span>
-          </p>
-        </div>
 
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-            {error}
+          <div className="footer-text">
+            Secured with encryption
           </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-            {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              OTP Code
-            </label>
-            <input
-              type="text"
-              name="otp"
-              value={formData.otp}
-              onChange={(e) => setFormData({ ...formData, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
-              required
-              maxLength="6"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-              placeholder="000000"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              New Password
-            </label>
-            <input
-              type="password"
-              name="newPassword"
-              value={formData.newPassword}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm New Password
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition disabled:bg-indigo-400 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Resetting...' : 'Reset Password'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-gray-600 mb-2 text-sm">Didn't receive the code?</p>
-          <button
-            onClick={handleResendOTP}
-            disabled={resendLoading}
-            className="text-indigo-600 font-medium hover:text-indigo-700 disabled:text-indigo-400 transition text-sm"
-          >
-            {resendLoading ? 'Sending...' : 'Resend OTP'}
-          </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
