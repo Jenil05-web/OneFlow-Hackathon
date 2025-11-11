@@ -1,7 +1,6 @@
 buildCommand: |
   rm -rf node_modules
   npm ci
-  chmod +x ./node_modules/.bin/vite || true
-  npm run build
+  npx vite build
 publishPath: dist
 nodeVersion: 20
