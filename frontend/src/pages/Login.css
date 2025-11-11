@@ -1,7 +1,7 @@
 /* Reset & Base variables for consistent theming */
 :root {
   --primary-color: #4F46E5; /* Modern Indigo */
-  --primary-hover: #4338CA;
+  --primary-hover: (#4F46E5, 15%);
   --text-dark: #1F2937;
   --text-gray: #6B7280;
   --bg-light: #F3F4F6;
@@ -163,7 +163,7 @@
 .btn-login {
   width: 100%;
   padding: 12px;
-  background-color: var(--primary-color);
+  background-color: black;
   color: white;
   border: none;
   border-radius: 8px;
@@ -177,9 +177,7 @@
   height: 48px; /* Fixed height prevents jitter during loading state */
 }
 
-.btn-login:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-}
+
 
 .btn-login:active:not(:disabled) {
   transform: scale(0.98);
@@ -240,69 +238,3 @@
    DARK THEME STYLES
    ============================================ */
 
-[data-theme="dark"] .login-page {
-  background-color: var(--bg-primary);
-}
-
-[data-theme="dark"] .login-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--gray-700);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .login-header h2 {
-  color: var(--text-primary);
-}
-
-[data-theme="dark"] .login-header p {
-  color: var(--text-secondary);
-}
-
-[data-theme="dark"] .form-group label {
-  color: var(--text-primary);
-}
-
-[data-theme="dark"] .input-wrapper input {
-  background: var(--bg-tertiary);
-  border-color: var(--gray-700);
-  color: var(--text-primary);
-}
-
-[data-theme="dark"] .input-wrapper input:focus {
-  border-color: var(--primary-400);
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
-}
-
-[data-theme="dark"] .input-wrapper input::placeholder {
-  color: var(--text-tertiary);
-}
-
-[data-theme="dark"] .input-icon {
-  color: var(--text-secondary);
-}
-
-[data-theme="dark"] .checkbox-container {
-  color: var(--text-secondary);
-}
-
-[data-theme="dark"] .forgot-link {
-  color: var(--primary-400);
-}
-
-[data-theme="dark"] .login-footer {
-  color: var(--text-secondary);
-}
-
-[data-theme="dark"] .login-footer a {
-  color: var(--primary-400);
-}
-
-@media (max-width: 480px) {
-  [data-theme="dark"] .login-page {
-    background-color: var(--bg-primary);
-  }
-  
-  [data-theme="dark"] .login-card {
-    background: var(--bg-secondary);
-  }
-}

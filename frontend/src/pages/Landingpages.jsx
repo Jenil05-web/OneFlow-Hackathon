@@ -44,7 +44,7 @@ export default function OneFlowLanding() {
               className="nav-link-button"
               onClick={() => scrollToSection("pricing")}
             >
-              Pricing
+            
             </button>
             <Link to="/login" className="nav-link-button">
               Login
